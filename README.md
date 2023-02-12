@@ -11,4 +11,4 @@ https://github.com/sandeepmistry/arduino-LoRa
 
 https://github.com/ElectronicCats/mpu6050
 
-https://github.com/arduino-libraries/SD.git
+https://github.com/arduino-libraries/SD
