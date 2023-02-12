@@ -3,6 +3,14 @@
 #include <LoRa.h>
 #include "IntersemaBaro.h"
 
+/*
+stage label bit (1 bit)
+status (1 byte, chars)
+GPS data —> 2 32 bit long  (lat & longitude)
+altimeter —> int 32 bit
+IMU (gyro & accelerometer) —> 6 16 bit integers 
+*/
+
 //struct for packet
 typedef struct {
   char header = 0x55;
@@ -28,6 +36,8 @@ Intersema::BaroPressure_MS5607B baro(true);
 float avg_alt;
 float alt0;
 float altitude;
+
+int packet_size = 19;
 
 // TV camera power management
 #define TV_CAM_PIN 5     // pin to turn on live TV camera --- raise high
@@ -98,7 +108,7 @@ void setup() {
 void send_to_lora(uint8_t * packet) {
   //writing with packet
   LoRa.beginPacket();
-  LoRa.write(packet, 16);
+  LoRa.write(packet, packet_size);
   LoRa.endPacket();
 }
 
@@ -126,14 +136,14 @@ void loop() {
     digitalWrite(TV_CAM_PIN, HIGH);
     TV_cam_is_on = 1;
   }
-  
+
   Serial.print("lat: ");
   Serial.println(packet.lat);
   Serial.print("lon: ");
   Serial.println(packet.lon);
   Serial.print("altitude: ");
   Serial.println(packet.altitude);
-  
+
   //convert to uint8_t packet
   uint8_t * packet_addr = (uint8_t *)(&packet);
 

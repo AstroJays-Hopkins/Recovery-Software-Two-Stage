@@ -2,6 +2,14 @@
 #include <LoRa.h>
 // #include "IntersemaBaro.h"
 
+/*
+stage label bit (1 bit)
+status (1 byte, chars)
+GPS data —> 2 32 bit long  (lat & longitude)
+altimeter —> int 32 bit
+IMU (gyro & accelerometer) —> 6 16 bit integers 
+*/
+
 //struct for packet
 typedef struct {
   char header = 0x55;
@@ -26,6 +34,8 @@ typedef struct {
 float avg_alt;
 float alt0;
 float altitude;
+
+int packet_size = 19;
 
 // TV camera power management
 #define TV_CAM_PIN 5     // pin to turn on live TV camera --- raise high
@@ -75,8 +85,8 @@ void setup() {
 
   // Enable TV camera power control pin as output and set to low to
   // keep camera off.
-  pinMode(TV_CAM_PIN, OUTPUT);
-  digitalWrite(TV_CAM_PIN, LOW);
+  // pinMode(TV_CAM_PIN, OUTPUT);
+  // digitalWrite(TV_CAM_PIN, LOW);
 }
 
 
@@ -96,7 +106,7 @@ void setup() {
 void send_to_lora(uint8_t * packet) {
   //writing with packet
   LoRa.beginPacket();
-  LoRa.write(packet, 19);
+  LoRa.write(packet, packet_size);
   LoRa.endPacket();
 }
 
