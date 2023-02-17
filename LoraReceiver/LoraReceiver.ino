@@ -10,98 +10,49 @@ altimeter —> int 32 bit
 IMU (gyro & accelerometer) —> 6 16 bit integers 
 */
 
-//struct for packet
+int packet_size = 54;
+
+
 typedef struct {
-  char header = 0x55;
-  float lat;
+  char stage;
   char padding1;
-  float lon;
+  long latitude;
   char padding2;
-  float altitude;
+  long longitude;
   char padding3;
-  char test[3];
+  int altimeter;
   char padding4;
+  IMU imuPacket;
 } __attribute__((packed)) Packet;
 
-//defining GPS serial
-// #define GPSSerial Serial1
-// #define Serial SERIAL_PORT_USBVIRTUAL​
-// TinyGPS gps;
+//struct for packet
+typedef struct {
+  int xGyro;
+  char padding1;
+  int yGyro;
+  char padding2;
+  int zGyro;
+  char padding3;
+  int xAcc;
+  char padding4;
+  int yAcc;
+  char padding4;
+  int zAcc;
 
-//altimiter set up
-// Intersema::BaroPressure_MS5607B baro(true);​
-// Altitude variables
-float avg_alt;
-float alt0;
-float altitude;
-
-int packet_size = 19;
-
-// TV camera power management
-#define TV_CAM_PIN 5     // pin to turn on live TV camera --- raise high
-                          // to turn on camera.
-#define TV_CAM_ON_ALTITUDE 5     // Altitude (in feet) at which camera turns on
-int TV_cam_is_on = 0;                // 0 when camera is off; 1 when cam is on​
-
-// static void smartdelay(unsigned long ms)
-// {
-//   unsigned long start = millis();
-//   do 
-//   {
-//     while (GPSSerial.available())
-//       gps.encode(GPSSerial.read());
-//   } while (millis() - start < ms);
-// }
+} __attribute__((packed)) IMU;
 
 void setup() {
-  //Lora Setup
-  Serial.begin(115200);
+  //set up serial output
+  Serial.begin(9600);
   while (!Serial);
+
+  Serial.println("LoRa Receiver");
+  //set up LoRa
   if (!LoRa.begin(915E6)) {
-    Serial.println("LoRa radio init IS NOT OK!");
-    while (1);    
+    Serial.println("Starting LoRa failed!");
+    while (1);
   }
-  Serial.println("LoRa radio init OK!");
-  LoRa.setTxPower(20);
-  Serial.println("Cranking up power!");
-  //initalize baro
-  // baro.init();
-  Serial.println("Initializing Baro!");
-
-  //set starting altitude
-  alt0 = 0;
-  altitude = 0;
-  avg_alt = 0;
-  int num_points = 50;
-  // for (int i = 0; i < num_points; i++)
-  // {
-    // alt0 += baro.getHeightCentiMeters() / 30.48;
-    // delay(10);
-  // }
-  alt0 /= num_points;
-
-  //GPS startup
-  // GPSSerial.begin(9600);
-
-  // Enable TV camera power control pin as output and set to low to
-  // keep camera off.
-  // pinMode(TV_CAM_PIN, OUTPUT);
-  // digitalWrite(TV_CAM_PIN, LOW);
 }
-
-
-//format
-//1 byte marker
-
-//4 bytes of float lat
-//1 byte of 
-
-//4 bytes of float lon
-//1 bytes of padding
-
-//4 bytes of altitude
-//1 byte of padding
-//total 16 bytes
 
 void send_to_lora(uint8_t * packet) {
   //writing with packet
@@ -110,45 +61,39 @@ void send_to_lora(uint8_t * packet) {
   LoRa.endPacket();
 }
 
-//global variables for lat and lon
-float flat = 0;
-float flon = 0;
-unsigned long age = 0;
-
+//unpack struct
+/*
 void loop() {
-  // smartdelay(10);
-  // gps.f_get_position(&flat, &flon, &age);
+  // try to parse packet
+  int packetSize = LoRa.parsePacket();
 
-  // altitude = baro.getHeightCentiMeters() / 30.48 - alt0;
-  avg_alt += (altitude - avg_alt) / 5;
- 
-  //pack the struct
-  Packet packet;
-  packet.lat = flat;
-  packet.lon = flon;
-  packet.altitude = avg_alt;
-  packet.test[0] = 'A';
-  packet.test[1] = 'A';
-  packet.test[2] = '\0';
+  //packet size is 16
+  if (packetSize==packet_size) {
+    // received a packet
+    Serial.println("Received packet ");
+    
 
-  // Turn on the TV camera if it is off and we've exceeded the
-  // altitute it's supposed to turn on at
-  if (!TV_cam_is_on && ((avg_alt - alt0) > TV_CAM_ON_ALTITUDE)) {
-    digitalWrite(TV_CAM_PIN, HIGH);
-    TV_cam_is_on = 1;
+    char stage = (char)LoRa.read();
+    //the header is always 0x55
+    if(first == 0x55) {
+      buffer[0] = first;
+      int i=1;
+      //read into buffer
+      while(i<16) {
+        buffer[i]=(char)LoRa.read();
+        ++i;
+      }
+      //parse the buffer into packet
+      Packet * packet_ptr = (Packet *) buffer;
+      //output lat lon 
+      Serial.print("lat: ");
+      Serial.println(packet_ptr->lat);
+      Serial.print("lon: ");
+      Serial.println(packet_ptr->lon);
+      Serial.print("altitude: ");
+      Serial.println(packet_ptr->altitude);
+    }
+
   }
-  
-  
-  Serial.print("lat: ");
-  Serial.println(packet.lat);
-  Serial.print("lon: ");
-  Serial.println(packet.lon);
-  Serial.print("altitude: ");
-  Serial.println(packet.altitude);
-  
-  //convert to uint8_t packet
-  uint8_t * packet_addr = (uint8_t *)(&packet);
-
-  //send to lora function
-  send_to_lora(packet_addr);
+  */
 }
