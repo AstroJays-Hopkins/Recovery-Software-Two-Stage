@@ -36,7 +36,7 @@ typedef struct {
 } __attribute__((packed)) Packet;
 
 //struct for transmission
-int intended_packet_size = sizeof(Packet);
+const int intended_packet_size = sizeof(Packet);
 char buffer[intended_packet_size];
 
 void setup() {
@@ -70,11 +70,12 @@ void loop() {
     // received a packet
     Serial.println("Received packet ");
 
-    char stage = (char)LoRa.read();
+    char first = (char)LoRa.read();
     //the header is always 0x55
     if(first == 0x55) {
       buffer[0] = first;
-      int i=1;
+      //index
+      int i = 1;
       //read into buffer
       while(i<intended_packet_size) {
         buffer[i]=(char)LoRa.read();
