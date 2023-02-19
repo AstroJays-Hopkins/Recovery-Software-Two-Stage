@@ -10,36 +10,34 @@ altimeter —> int 32 bit
 IMU (gyro & accelerometer) —> 6 16 bit integers 
 */
 
-int packet_size = 54;
-
-
-typedef struct {
-  char stage;
-  char padding1;
-  long latitude;
-  char padding2;
-  long longitude;
-  char padding3;
-  int altimeter;
-  char padding4;
-  IMU imuPacket;
-} __attribute__((packed)) Packet;
-
 //struct for packet
 typedef struct {
-  int xGyro;
-  char padding1;
-  int yGyro;
-  char padding2;
-  int zGyro;
-  char padding3;
-  int xAcc;
-  char padding4;
-  int yAcc;
-  char padding4;
-  int zAcc;
+  int16_t xGyro; //4
+  int16_t yGyro; //4
+  int16_t zGyro; //4
+  int16_t xAcc; //4
+  int16_t yAcc; //4
+  int16_t zAcc; //4
 
 } __attribute__((packed)) IMU;
+
+typedef struct {
+  char header = 0x55; //1
+  char padding0; //1
+  char stage; //1
+  char padding1; //1
+  double latitude; //4
+  char padding2; //1
+  double longitude; //4
+  char padding3; //1
+  double altitude; //4
+  char padding4; //1
+  IMU imuPacket; // 24
+} __attribute__((packed)) Packet;
+
+//struct for transmission
+int intended_packet_size = sizeof(Packet);
+char buffer[intended_packet_size];
 
 void setup() {
   //set up serial output
@@ -57,21 +55,20 @@ void setup() {
 void send_to_lora(uint8_t * packet) {
   //writing with packet
   LoRa.beginPacket();
-  LoRa.write(packet, packet_size);
+  LoRa.write(packet, intended_packet_size);
   LoRa.endPacket();
 }
 
 //unpack struct
-/*
+
 void loop() {
   // try to parse packet
-  int packetSize = LoRa.parsePacket();
+  int actual_packet_size = LoRa.parsePacket();
 
   //packet size is 16
-  if (packetSize==packet_size) {
+  if (actual_packet_size==intended_packet_size) {
     // received a packet
     Serial.println("Received packet ");
-    
 
     char stage = (char)LoRa.read();
     //the header is always 0x55
@@ -79,7 +76,7 @@ void loop() {
       buffer[0] = first;
       int i=1;
       //read into buffer
-      while(i<16) {
+      while(i<intended_packet_size) {
         buffer[i]=(char)LoRa.read();
         ++i;
       }
@@ -87,13 +84,11 @@ void loop() {
       Packet * packet_ptr = (Packet *) buffer;
       //output lat lon 
       Serial.print("lat: ");
-      Serial.println(packet_ptr->lat);
+      Serial.println(packet_ptr->latitude);
       Serial.print("lon: ");
-      Serial.println(packet_ptr->lon);
+      Serial.println(packet_ptr->longitude);
       Serial.print("altitude: ");
       Serial.println(packet_ptr->altitude);
     }
-
   }
-  */
 }

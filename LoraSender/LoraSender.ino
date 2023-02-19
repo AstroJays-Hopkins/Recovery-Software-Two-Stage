@@ -9,36 +9,33 @@ altimeter —> int 32 bit
 IMU (gyro & accelerometer) —> 6 16 bit integers 
 */
 
-//struct for transmission
-int packet_size = 54;
-
-typedef struct {
-  char stage;
-  char padding1;
-  long latitude;
-  char padding2;
-  long longitude;
-  char padding3;
-  int altimeter;
-  char padding4;
-  IMU imuPacket;
-} __attribute__((packed)) Packet;
-
 //struct for packet
 typedef struct {
-  int xGyro;
-  char padding1;
-  int yGyro;
-  char padding2;
-  int zGyro;
-  char padding3;
-  int xAcc;
-  char padding4;
-  int yAcc;
-  char padding4;
-  int zAcc;
+  int16_t xGyro; //4
+  int16_t yGyro; //4
+  int16_t zGyro; //4
+  int16_t xAcc; //4
+  int16_t yAcc; //4
+  int16_t zAcc; //4
 
 } __attribute__((packed)) IMU;
+
+typedef struct {
+  char header = 0x55; //1
+  char padding0; //1
+  char stage; //1
+  char padding1; //1
+  double latitude; //4
+  char padding2; //1
+  double longitude; //4
+  char padding3; //1
+  double altitude; //4
+  char padding4; //1
+  IMU imuPacket; // 24
+} __attribute__((packed)) Packet;
+
+//struct for transmission
+int intended_packet_size = sizeof(Packet);
 
 void setup() {
   //Lora Setup
