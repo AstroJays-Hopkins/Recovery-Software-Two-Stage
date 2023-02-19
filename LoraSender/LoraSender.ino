@@ -35,7 +35,7 @@ typedef struct {
 } __attribute__((packed)) Packet;
 
 //struct for transmission
-int intended_packet_size = sizeof(Packet);
+const int intended_packet_size = sizeof(Packet);
 
 void setup() {
   //Lora Setup
@@ -49,7 +49,7 @@ void setup() {
 void send_to_lora(uint8_t * packet) {
   //writing with packet
   LoRa.beginPacket();
-  LoRa.write(packet, packet_size);
+  LoRa.write(packet, intended_packet_size);
   LoRa.endPacket();
 }
 
@@ -58,21 +58,21 @@ void loop() {
 
   //set up IMU packet
   IMU imuP;
-  imuPacket.xGyro = 0;
-  imuPacket.yGyro = 0;
-  imuPacket.zGyro = 0;
-  imuPacket.xAcc = 0;
-  imuPacket.yAcc = 0;
-  imuPacket.zAcc = 0;
+  imuP.xGyro = 0;
+  imuP.yGyro = 0;
+  imuP.zGyro = 0;
+  imuP.xAcc = 0;
+  imuP.yAcc = 0;
+  imuP.zAcc = 0;
 
   //set up transmission Packet
   Packet packet;
   packet.stage = '1';
   packet.latitude = 0;
-  packet.longitude = 0;
-  packet.altimeter = 0;
+  packet.longitude = 10;
+  packet.altitude = 0;
   packet.imuPacket = imuP;
-z
+
   //convert to uint8_t packet
   uint8_t * packet_addr = (uint8_t *)(&packet);
 
