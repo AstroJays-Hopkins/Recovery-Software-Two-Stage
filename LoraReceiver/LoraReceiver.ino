@@ -12,12 +12,12 @@ IMU (gyro & accelerometer) —> 6 16 bit integers
 
 //struct for packet
 typedef struct {
-  int16_t xGyro; //4
-  int16_t yGyro; //4
-  int16_t zGyro; //4
-  int16_t xAcc; //4
-  int16_t yAcc; //4
-  int16_t zAcc; //4
+  uint16_t xGyro; //4
+  uint16_t yGyro; //4
+  uint16_t zGyro; //4
+  uint16_t xAcc; //4
+  uint16_t yAcc; //4
+  uint16_t zAcc; //4
 
 } __attribute__((packed)) IMU;
 
@@ -26,11 +26,11 @@ typedef struct {
   char padding0; //1
   char stage; //1
   char padding1; //1
-  double latitude; //4
+  uint32_t latitude; //4
   char padding2; //1
-  double longitude; //4
+  uint32_t longitude; //4
   char padding3; //1
-  double altitude; //4
+  uint32_t altitude; //4
   char padding4; //1
   IMU imuPacket; // 24
 } __attribute__((packed)) Packet;
