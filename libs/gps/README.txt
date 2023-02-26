@@ -1,0 +1,1 @@
+USE ONLY rawLat, rawLong from TinyGPSLocation inside TinyGPSPlus
