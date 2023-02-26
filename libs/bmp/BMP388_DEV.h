@@ -37,7 +37,7 @@
 #ifndef BMP388_DEV_h
 #define BMP388_DEV_h
 
-#include <Device.h>
+#include "Device.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // BMP388_DEV Definitions
@@ -50,7 +50,6 @@
 #define RESET_CODE						0xB6				// The BMP388 reset code
 #define FIFO_FLUSH						0xB0				// The BMP388 flush FIFO code
 
-enum SPIPort { BMP388_SPI0, BMP388_SPI1 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // BMP388_DEV Registers
@@ -212,14 +211,7 @@ enum WatchdogTimout {											// I2C watchdog time-out
 class BMP388_DEV : public Device {															// Derive the BMP388_DEV class from the Device class
 	public:
 		BMP388_DEV(TwoWire& twoWire = Wire);												// BMP388_DEV object for I2C operation
-#ifdef ARDUINO_ARCH_ESP8266
-		BMP388_DEV(uint8_t sda, uint8_t scl, TwoWire& twoWire = Wire);	// BMP388_DEV object for ESP8266 I2C operation with user-defined pins
-#endif
-		BMP388_DEV(uint8_t cs);																			// BMP388_DEV object for SPI operation
-#ifdef ARDUINO_ARCH_ESP32
-		BMP388_DEV(uint8_t sda, uint8_t scl, TwoWire& twoWire = Wire);	// BMP388_DEV object for ESP32 I2C operation with user-defined pins
-		BMP388_DEV(uint8_t cs, uint8_t spiPort, SPIClass& spiClass);	// BMP388_DEV object for SPI1 with supplied SPIClass object
-#endif
+
 		uint8_t begin(Mode mode = SLEEP_MODE, 												// Initialise the barometer with arguments
 									Oversampling presOversampling = OVERSAMPLING_X16, 
 									Oversampling tempOversampling = OVERSAMPLING_X2, 

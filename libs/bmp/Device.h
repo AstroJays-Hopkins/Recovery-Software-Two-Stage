@@ -37,17 +37,13 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <SPI.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Device Communications
 ////////////////////////////////////////////////////////////////////////////////
-
-#if defined ARDUINO_ARCH_ESP8266 || defined ARDUINO_ARCH_ESP32
-enum Comms { I2C_COMMS, SPI_COMMS, I2C_COMMS_DEFINED_PINS };
-#else						 
-enum Comms { I2C_COMMS, SPI_COMMS };		 
-#endif
+					 
+// Only I2c
 
 ////////////////////////////////////////////////////////////////////////////////
 // Device Class definition
@@ -56,39 +52,16 @@ enum Comms { I2C_COMMS, SPI_COMMS };
 class Device{
 	public:
 		Device(TwoWire& twoWire);																		// Device object for I2C operation
-#ifdef ARDUINO_ARCH_ESP8266
-		Device(uint8_t sda, uint8_t scl, TwoWire& twoWire);					// Device object for ESP8266 I2C operation with user-defined pins
-#endif
-		Device(uint8_t cs);																					// Device object for SPI operation
-#ifdef ARDUINO_ARCH_ESP32
-		Device(uint8_t sda, uint8_t scl, TwoWire& twoWire);					// Device object for ESP32 I2C operation with user-defined pins
-		Device(uint8_t cs, uint8_t spiPort, SPIClass& spiClass);		// Device object for ESP32 HSPI operation with supplied SPI object
-#endif		
-		void setClock(uint32_t clockSpeed);													// Set the I2C/SPI clock speed
-#if !defined ARDUINO_ARCH_ESP8266 && !defined ARDUINO_ARCH_ESP32 && !defined ARDUINO_SAM_DUE && !defined STM32F1
-		void usingInterrupt(uint8_t pinNumber);											// Wrapper for the SPI.usingInterrupt() function
-		void notUsingInterrupt(uint8_t pinNumber);									// Wrapper for the SPI.notUsingInterrupt() function
-#endif
+	
+		void setClock(uint32_t clockSpeed);													// Set the I2C clock speed
 	protected:
 		void initialise();																					// Initialise communications	
 		void setI2CAddress(uint8_t addr);											  		// Set the Device I2C address
-		void writeByte(uint8_t subAddress, uint8_t data);						// I2C and SPI write byte wrapper function
-		uint8_t readByte(uint8_t subAddress);												// I2C and SPI read byte wrapper function
-		void readBytes(uint8_t subAddress, uint8_t* dest, uint16_t count);		// I2C and SPI read bytes wrapper function	
+		void writeByte(uint8_t subAddress, uint8_t data);						// I2C write byte wrapper function
+		uint8_t readByte(uint8_t subAddress);												// I2C read byte wrapper function
+		void readBytes(uint8_t subAddress, uint8_t* dest, uint16_t count);		// I2C  read bytes wrapper function	
 	private:
-		Comms comms;																								// Communications bus: I2C or SPI
 		uint8_t address;																						// The device I2C address
-		uint8_t cs;																									// The SPI chip select pin
-#ifdef ARDUINO_ARCH_ESP32
-		uint8_t spiPort;																						// SPI port type VSPI or HSPI
-#endif
 		TwoWire* i2c;																								// Pointer to the Wire class
-		SPIClass* spi;																							// Pointer to the SPI class
-		uint32_t spiClockSpeed;																			// The SPI clock speed		
-		const uint8_t WRITE_MASK = 0x7F;														// Sub-address write mask for SPI communications
-		const uint8_t READ_MASK  = 0x80;														// Sub-address read mask for SPI communications
-#if defined ARDUINO_ARCH_ESP8266 || defined ARDUINO_ARCH_ESP32
-		uint8_t sda, scl;																						// Software I2C SDA and SCL pins 
-#endif
 };
 #endif

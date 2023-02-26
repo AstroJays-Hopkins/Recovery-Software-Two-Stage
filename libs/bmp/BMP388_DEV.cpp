@@ -1,4 +1,5 @@
 /*
+	Culled I2C version - mac
   BMP388_DEV is an I2C/SPI compatible library for the Bosch BMP388 barometer.
 	
 	Copyright (C) Martin Lindupp 2020
@@ -34,23 +35,14 @@
 	SOFTWARE.
 */
 
-#include <BMP388_DEV.h>
+#include "BMP388_DEV.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // BMP388_DEV Class Constructors
 ////////////////////////////////////////////////////////////////////////////////
 
 BMP388_DEV::BMP388_DEV(TwoWire& twoWire) : Device(twoWire) { setI2CAddress(BMP388_I2C_ADDR); }		// Constructor for I2C communications	
-#ifdef ARDUINO_ARCH_ESP8266
-BMP388_DEV::BMP388_DEV(uint8_t sda, uint8_t scl, TwoWire& twoWire) : 		// Constructor for I2C comms on ESP8266
-	Device(sda, scl, twoWire) { setI2CAddress(BMP388_I2C_ADDR); } 	
-#endif
-BMP388_DEV::BMP388_DEV(uint8_t cs) : Device(cs) {}			   							// Constructor for SPI communications
-#ifdef ARDUINO_ARCH_ESP32 																			
-BMP388_DEV::BMP388_DEV(uint8_t sda, uint8_t scl, TwoWire& twoWire) : 		// Constructor for I2C comms on ESP32
-	Device(sda, scl, twoWire) { setI2CAddress(BMP388_I2C_ADDR); } 	
-BMP388_DEV::BMP388_DEV(uint8_t cs, uint8_t spiPort, SPIClass& spiClass) : Device(cs, spiPort, spiClass) {} // Constructor for SPI communications on the ESP32
-#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 // BMP388_DEV Public Member Functions
 ////////////////////////////////////////////////////////////////////////////////
