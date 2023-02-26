@@ -72,7 +72,6 @@ static const uint8_t PROD_ID        = 0x30;
 #define EN_PRD_SET                  (1 << 7)
 #define ST_ENP                      (1 << 1)
 #define ST_ENM                      (1 << 2)
-#define SPI_3W                      (1 << 6)
 #define X2_MASK                     (3 << 6)
 #define Y2_MASK                     (3 << 4)
 #define Z2_MASK                     (3 << 2)
@@ -83,7 +82,6 @@ enum class SF_MMC5983MA_ERROR
 {
   NONE,
   I2C_INITIALIZATION_ERROR,
-  SPI_INITIALIZATION_ERROR,
   INVALID_DEVICE,
   BUS_ERROR,
   INVALID_FILTER_BANDWIDTH,

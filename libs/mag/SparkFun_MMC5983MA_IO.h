@@ -17,18 +17,12 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <SPI.h>
 
 class SFE_MMC5983MA_IO
 {
 private:
-  SPIClass *_spiPort = nullptr;
-  uint8_t _csPin = 0;
-  SPISettings _mmcSpiSettings;
-
   TwoWire *_i2cPort = nullptr;
   uint8_t _address = 0;
-  bool useSPI = false;
 
 public:
   // Default empty constructor.
@@ -37,17 +31,8 @@ public:
   // Default empty destructor
   ~SFE_MMC5983MA_IO() = default;
 
-  // Builds default SPI settings if none are provided.
-  void initSPISettings();
-
   // Configures and starts the I2C I/O layer.
   bool begin(TwoWire &wirePort);
-
-  // Configures and starts the SPI I/O layer.
-  bool begin(const uint8_t csPin, SPIClass &spiPort = SPI);
-
-  // Configures the SPI I/O layer with the given chip select and SPI settings provided by the user.
-  bool begin(const uint8_t csPin, SPISettings userSettings, SPIClass &spiPort = SPI);
 
   // Returns true if we get the correct product ID from the device.
   bool isConnected();
@@ -72,9 +57,6 @@ public:
 
   // Returns true if a specific bit is set in a register. Bit position ranges from 0 (lsb) to 7 (msb).
   bool isBitSet(const uint8_t registerAddress, const uint8_t bitMask);
-
-  // Returns true if the interface in use is SPI
-  bool spiInUse();
 };
 
 #endif

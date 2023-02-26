@@ -17,7 +17,6 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <SPI.h>
 #include "SparkFun_MMC5983MA_IO.h"
 #include "SparkFun_MMC5983MA_Arduino_Library_Constants.h"
 
@@ -67,10 +66,6 @@ public:
   // Initializes MMC5983MA using I2C
   bool begin(TwoWire &wirePort = Wire);
 
-  // Initializes MMC5983MA using SPI
-  bool begin(uint8_t csPin, SPIClass& spiPort = SPI);
-  bool begin(uint8_t csPin, SPISettings userSettings, SPIClass& spiPort = SPI);
-
   // Polls if MMC5983MA is connected and if chip ID matches MMC5983MA chip id.
   bool isConnected();
 
@@ -89,15 +84,6 @@ public:
 
   // Checks if interrupt generation is enabled.
   bool isInterruptEnabled();
-
-  // Enables 3 wire SPI interface
-  bool enable3WireSPI();
-
-  // Disables SPI interface
-  bool disable3WireSPI();
-
-  // Checks if SPI is enabled
-  bool is3WireSPIEnabled();
 
   // Performs SET operation
   bool performSetOperation();
