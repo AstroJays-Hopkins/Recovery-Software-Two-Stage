@@ -12,3 +12,5 @@ https://github.com/sandeepmistry/arduino-LoRa
 https://github.com/ElectronicCats/mpu6050
 
 https://github.com/arduino-libraries/SD
+
+https://github.com/sparkfun/SparkFun_MMC5983MA_Magnetometer_Arduino_Library
