@@ -50,7 +50,6 @@
 #define RESET_CODE						0xB6				// The BMP388 reset code
 #define FIFO_FLUSH						0xB0				// The BMP388 flush FIFO code
 
-enum SPIPort { BMP388_SPI0, BMP388_SPI1 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // BMP388_DEV Registers
