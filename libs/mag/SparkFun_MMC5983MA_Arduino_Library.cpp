@@ -158,9 +158,6 @@ const char *SFE_MMC5983MA::errorCodeString(SF_MMC5983MA_ERROR errorCode)
   case SF_MMC5983MA_ERROR::I2C_INITIALIZATION_ERROR:
     return "I2C_INITIALIZATION_ERROR";
     break;
-  case SF_MMC5983MA_ERROR::SPI_INITIALIZATION_ERROR:
-    return "SPI_INITIALIZATION_ERROR";
-    break;
   case SF_MMC5983MA_ERROR::INVALID_DEVICE:
     return "INVALID_DEVICE";
     break;
@@ -190,28 +187,6 @@ bool SFE_MMC5983MA::begin(TwoWire &wirePort)
     if (!success)
     {
         SAFE_CALLBACK(errorCallback, SF_MMC5983MA_ERROR::I2C_INITIALIZATION_ERROR);
-        return false;
-    }
-    return isConnected();
-}
-
-bool SFE_MMC5983MA::begin(uint8_t userCSPin, SPIClass &spiPort)
-{
-    bool success = mmc_io.begin(userCSPin, spiPort);
-    if (!success)
-    {
-        SAFE_CALLBACK(errorCallback, SF_MMC5983MA_ERROR::SPI_INITIALIZATION_ERROR);
-        return false;
-    }
-    return isConnected();
-}
-
-bool SFE_MMC5983MA::begin(uint8_t userCSPin, SPISettings userSettings, SPIClass &spiPort)
-{
-    bool success = mmc_io.begin(userCSPin, userSettings, spiPort);
-    if (!success)
-    {
-        SAFE_CALLBACK(errorCallback, SF_MMC5983MA_ERROR::SPI_INITIALIZATION_ERROR);
         return false;
     }
     return isConnected();
@@ -308,27 +283,6 @@ bool SFE_MMC5983MA::isInterruptEnabled()
     // Get the bit value from the shadow register since the IC does not
     // allow reading INT_CTRL_0_REG register.
     return isShadowBitSet(INT_CTRL_0_REG, INT_MEAS_DONE_EN);
-}
-
-bool SFE_MMC5983MA::enable3WireSPI()
-{
-    // This bit must be set through the shadow memory or we won't be
-    // able to check if SPI is enabled using isSPIEnabled()
-    return (setShadowBit(INT_CTRL_3_REG, SPI_3W));
-}
-
-bool SFE_MMC5983MA::disable3WireSPI()
-{
-    // This bit must be cleared through the shadow memory or we won't be
-    // able to check if is is enabled using isSPIEnabled()
-    return (clearShadowBit(INT_CTRL_3_REG, SPI_3W));
-}
-
-bool SFE_MMC5983MA::is3WireSPIEnabled()
-{
-    // Get the bit value from the shadow register since the IC does not
-    // allow reading INT_CTRL_3_REG register.
-    return (isShadowBitSet(INT_CTRL_3_REG, SPI_3W));
 }
 
 bool SFE_MMC5983MA::performSetOperation()
