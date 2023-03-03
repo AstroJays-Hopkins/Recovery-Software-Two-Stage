@@ -59,8 +59,6 @@ public:
    uint32_t age() const    { return valid ? millis() - lastCommitTime : (uint32_t)ULONG_MAX; }
    const RawDegrees &rawLat()     { updated = false; return rawLatData; }
    const RawDegrees &rawLng()     { updated = false; return rawLngData; }
-   double lat();
-   double lng();
 
    TinyGPSLocation() : valid(false), updated(false)
    {}
@@ -234,8 +232,6 @@ public:
 
   static const char *libraryVersion() { return _GPS_VERSION; }
 
-  static double distanceBetween(double lat1, double long1, double lat2, double long2);
-  static double courseTo(double lat1, double long1, double lat2, double long2);
   static const char *cardinal(double course);
 
   static int32_t parseDecimal(const char *term);
