@@ -93,8 +93,9 @@ void loop() {
       //deploy_main();
       //END STATE
       break;
-    broadcast_data();
+    
   }
+  broadcast_data();
 }
 
 void broadcast_data(){

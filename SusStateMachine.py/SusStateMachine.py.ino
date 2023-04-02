@@ -109,7 +109,6 @@ void loop() {
       //deploy_main();
       //END STATE
       break;
-    broadcast_data();
   }
 
   // Update state machine for Ignition State
@@ -150,6 +149,7 @@ void loop() {
       //END STATE
       break;
   }
+  broadcast_data();
   // Add any other code you want to run continuously in your loop here
 }
 
