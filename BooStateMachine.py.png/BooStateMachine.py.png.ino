@@ -28,20 +28,23 @@ typedef struct {
   IMU imuPacket; // 24
 } __attribute__((packed)) Packet;
 
+//initialize packet size based on struct
 const int intended_packet_size = sizeof(Packet);
 
 // Define the initial state for each set
 Recovery_State StateSet1 = IDLE_REC;
 
+//Setup for state machine
 void setup() {
-    //Lora Setup
-  Serial.begin(115200);
+    //Attempt Lora setup
+  Serial.begin(115200)
   while (!Serial);
   if (!LoRa.begin(915E6)) {
     while (1);
   }
 }
 
+//method to write to LoRa
 void send_to_lora(uint8_t * packet) {
   //writing with packet
   LoRa.beginPacket();
@@ -49,47 +52,56 @@ void send_to_lora(uint8_t * packet) {
   LoRa.endPacket();
 }
 
-
-//ENSURE THAT ACCELERATION IS change in height over time NOT absolute accel to prevent isses with sideways travel
+//TODO::ENSURE THAT ACCELERATION IS change in height over time NOT absolute accel to prevent issues with sideways travel
 
 //ENSURE THIS IS ALTITUDE ABOVE GROUND NOT FROM SEA
-float HEIGHT_FLOOR = 0.00776714; //TEMP height floor in 8-miles height floor
-float MAIN_TRIGGER = 0.0142045; //TEMP height floor in 8-miles main trigger
+float HEIGHT_FLOOR = 0.00776714; //TEMP height floor in 8-miles
+float MAIN_TRIGGER = 0.0142045; //TEMP main trigger in 8-miles
 
 void loop() {
-  
-  // PLACEHOLDER READ DATA
+  // PLACEHOLDER READ DATA [TODO::Actually get the data]
+  //variable assignment: {acceleration index, altitude, altitude_trend}
   int data[] = {0,0,0,0,0,0,0};
-  //data = read_telemetry();
-  // Update state machine Recovery State
+
+  //TODO::update method --> data = read_telemetry();
+
+  // Update state machine 
   switch (StateSet1) {
     case IDLE_REC: //State to represent the rocket pre launch 
       //Placeholder condition for detecting launch
-      //0 = acceleration index
+      //index[0] = acceleration index
       if (data[0] >= 0){ //movement of rocket is the current assumption for launch
         StateSet1 = DETECT_LAUNCH_IGN;
       }
       break;
-    case DETECT_LAUNCH_IGN: //state to represent the rocket post launch (can mistake heavy jostling for launch)
+
+    //State to represent the rocket post launch (can mistake heavy jostling for launch)
+    case DETECT_LAUNCH_IGN: 
       //Placeholder condition for confirming launch
-      //1 = altitude 
-      if (data[1] >= HEIGHT_FLOOR) { //floor reached
+      //index[1] = altitude 
+      //Check if height floor reached and set to valid launch
+      if (data[1] >= HEIGHT_FLOOR) {
         StateSet1 = VALID_FLIGHT_REC;
       }
       //detect false launch 
-      //2 = altitude_trend
-      if (data[2] == 0) {//if not tredning anywhere
+      //index[2] = altitude_trend
+      if (data[2] == 0) {
+        //if altitude is not changing
         StateSet1 = IDLE_REC;
       }
       break;
-    case VALID_FLIGHT_REC: //State to represent further confirmation of launch with heigth floor
-      //Placeholder condition for detecting apogee and triggering drouge deploy
-      // 2 = atitude trend 
-      if (data[2] < 0) {//if treding down
+    
+    //State to represent further confirmation of launch with height floor
+    case VALID_FLIGHT_REC: 
+      //index[2] = atitude trend 
+      //check if altitude is trending downwards
+      if (data[2] < 0) {
         StateSet1 = DEPLOY_MAIN_REC;
       }
       break;
-    case DEPLOY_MAIN_REC: //state to trigger main deploy at floor
+
+    //State to trigger main deploy at floor
+    case DEPLOY_MAIN_REC: 
       //deploy_main();
       //END STATE
       break;
@@ -99,7 +111,7 @@ void loop() {
 }
 
 void broadcast_data(){
-  //set up IMU packet
+  //set up IMU packet with fake data
   IMU imuP;
   imuP.xGyro = 0;
   imuP.yGyro = 0;
@@ -108,7 +120,7 @@ void broadcast_data(){
   imuP.yAcc = 0;
   imuP.zAcc = 0;
 
-  //set up transmission Packet
+  //set up transmission Packet with fake data
   Packet packet;
   packet.stage = '1';
   packet.latitude = 0;

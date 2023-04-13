@@ -8,8 +8,6 @@ enum Ignition_State { IDLE_IGN, DETECT_LAUNCH_IGN, VALID_FLIGHT_IGN, LOCKOUT_IGN
 Recovery_State StateSet1 = IDLE_REC;
 Ignition_State StateSet2 = IDLE_IGN;
 
-#include <LoRa.h>
-
 /*
 stage label bit (1 bit)
 status (1 byte, chars)
@@ -70,42 +68,56 @@ float MAIN_TRIGGER = 0.0142045; //TEMP height floor in 8-miles main trigger
 
 void loop() {
   // PLACEHOLDER READ DATA
-  //data = read_telemetry();
+  //variable assignment: {acceleration index, altitude, altitude_trend}
   int data[] = {0,0,0,0,0,0,0};
+  //data = read_telemetry();
+
   // Update state machine Recovery State
   switch (StateSet1) {
-    case IDLE_REC: //State to represent the rocket pre launch 
+
+    //State to represent the rocket pre launch 
+    case IDLE_REC: 
       //Placeholder condition for detecting launch
       //0 = acceleration index
-      if (data[0] >= 0) { //movement of rocket is the current assumption for launch
+      //check for change in acceleration and set state to detecting launch
+      if (data[0] >= 0) {
         StateSet1 = DETECT_LAUNCH_REC;
       }
       break;
-    case DETECT_LAUNCH_IGN: //state to represent the rocket post launch (can mistake heavy jostling for launch)
+    
+    //state to represent the rocket post launch (can mistake heavy jostling for launch)
+    case DETECT_LAUNCH_IGN:
       //Placeholder condition for confirming launch
       //1 = altitude 
-      if (data[1] >= HEIGHT_FLOOR) { //floor reached
+      if (data[1] >= HEIGHT_FLOOR) { 
+        //height floor reached
         StateSet1 = VALID_FLIGHT_REC;
       }
-      //detect false launch 
+      //detect false launch by looking for altitude trend
       //2 = altitude_trend
-      if (data[2] == 0) {//if not tredning anywhere
+      if (data[2] == 0) {
         StateSet1 = IDLE_REC;
       }
       break;
-    case VALID_FLIGHT_REC: //State to represent further confirmation of launch with heigth floor
+
+    //State to represent further confirmation of launch with height floor
+    case VALID_FLIGHT_REC:
       //Placeholder condition for detecting apogee and triggering drouge deploy
       if (data[2] < 0) {//if treding down
         StateSet1 = DEPLOY_DROGUE_REC;
       }
       break;
-    case DEPLOY_DROGUE_REC: //State to trigger drouge deploy at apogee
+    
+    //State to trigger drogue deploy at apogee
+    case DEPLOY_DROGUE_REC: 
       //deploy_drogue();
-      if (data[1] <= MAIN_TRIGGER) {
+      if (data[1] >= MAIN_TRIGGER) {
         StateSet1 = DEPLOY_MAIN_REC; 
       }
       break;
-    case DEPLOY_MAIN_REC: //state to trigger main deploy at floor
+    
+    //State to trigger main deploy at floor
+    case DEPLOY_MAIN_REC: 
       //deploy_main();
       //END STATE
       break;
@@ -113,12 +125,14 @@ void loop() {
 
   // Update state machine for Ignition State
   switch (StateSet2) {
+    //rocket idle state
     case IDLE_IGN:
       //Placeholder condition for detecting launch
       if (data[0] >= 0){ //movement of rocket is the current assumption for launch
         StateSet2 = DETECT_LAUNCH_IGN;
       }
       break;
+    //pre-official launch to account for false launches
     case DETECT_LAUNCH_IGN:
       //Placeholder condition for confirming launch
       if (data[1] >= HEIGHT_FLOOR) { //floor reached
@@ -129,13 +143,14 @@ void loop() {
         StateSet2 = IDLE_IGN;
       }
       break;
+    //once valid flight established
     case VALID_FLIGHT_IGN:
-      //if any tilt exists
+      //if any tilt exists initiate lockout to avoid Missiling
       if (abs(data[3]) >= 5) {//
         StateSet2 = LOCKOUT_IGN;
       }
-      // detect time to ignite
-      if (data[4] < 0) {//if slowing down
+      // detect time to ignite based on slowing down
+      if (data[4] < 0) {
         StateSet2 = IGNITE_IGN;
       }
       break;
