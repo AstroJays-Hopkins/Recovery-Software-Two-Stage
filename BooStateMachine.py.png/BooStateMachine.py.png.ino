@@ -5,9 +5,9 @@ enum Recovery_State { IDLE_REC, DETECT_LAUNCH_IGN, VALID_FLIGHT_REC, DEPLOY_MAIN
 
 //struct for packet
 typedef struct {
-  uint16_t xGyro; //4
-  uint16_t yGyro; //4
-  uint16_t zGyro; //4
+  uint16_t thetaGyro; //4
+  uint16_t phiGyro; //4
+  uint16_t psiGyro; //4
   uint16_t xAcc; //4
   uint16_t yAcc; //4
   uint16_t zAcc; //4
@@ -25,6 +25,8 @@ typedef struct {
   char padding3; //1
   uint32_t altitude; //4
   char padding4; //1
+  uint32_t altTrend;
+  char padding5;  
   IMU imuPacket; // 24
 } __attribute__((packed)) Packet;
 
@@ -37,7 +39,7 @@ Recovery_State StateSet1 = IDLE_REC;
 //Setup for state machine
 void setup() {
     //Attempt Lora setup
-  Serial.begin(115200)
+  Serial.begin(115200);
   while (!Serial);
   if (!LoRa.begin(915E6)) {
     while (1);
@@ -110,12 +112,46 @@ void loop() {
   broadcast_data();
 }
 
+Packet read_telemetry(){
+  char raw_data[50];
+  int data[3];
+  Serial.readBytesUntil("\n", raw_data, 100);
+  int data_index = 0;
+  uint32_t buffered_value = 0;
+  for (int i = 0; i < strlen(raw_data); i++) {//loop through raw chars of serial data input
+    if (raw_data[i] == ','){ //when we see a comma reset the number we are counting 
+      data[data_index] = buffered_value; //store the summed up value
+      data_index += 1; // move on to collecting the next value
+      buffered_value = 0; //reset the buffered value we are counting 
+    }
+    buffered_value = buffered_value*10; //shift left by multiple of 10
+    buffered_value += ((int)raw_data[i] - '0'); //store the next char in the string as an int
+  }
+  IMU imuP;
+  imuP.thetaGyro = 0;
+  imuP.phiGyro = 0;
+  imuP.psiGyro = 0;
+  imuP.xAcc = 0;
+  imuP.yAcc = 0;
+  imuP.zAcc = data[0];
+
+  //set up transmission Packet with fake data
+  Packet packet;
+  packet.stage = '1';
+  packet.latitude = 0;
+  packet.longitude = 10;
+  packet.altitude = data[1];
+  packet.altTrend = data[2];
+  packet.imuPacket = imuP;
+  return packet;
+}
+
 void broadcast_data(){
   //set up IMU packet with fake data
   IMU imuP;
-  imuP.xGyro = 0;
-  imuP.yGyro = 0;
-  imuP.zGyro = 0;
+  imuP.thetaGyro = 0;
+  imuP.phiGyro = 0;
+  imuP.psiGyro = 0;
   imuP.xAcc = 0;
   imuP.yAcc = 0;
   imuP.zAcc = 0;
@@ -126,6 +162,7 @@ void broadcast_data(){
   packet.latitude = 0;
   packet.longitude = 10;
   packet.altitude = 0;
+  packet.altTrend = 0;
   packet.imuPacket = imuP;
 
   //convert to uint8_t packet
