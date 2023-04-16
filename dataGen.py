@@ -55,7 +55,7 @@ with open('launch1.csv', 'w', newline='') as file:
     for i in range(10):
         writer.writerow([theta, phi, xAcc, yAcc, zAcc, latitude, longitude, alt_index, alt_trend])
 
-ser = serial.Serial('/dev/ttyUSB0')
+ser = serial.Serial("COM4")
 
 # skip the first line(the header)
 with open('launch1.csv', 'r') as file:
@@ -67,6 +67,7 @@ with open('launch1.csv', 'r') as file:
         # Iterate over each row
         for row in file_csv:
             time.sleep(.2)
-            ser.write(row) 
+            output = ",".join(str(x) for x in row)
+            ser.write(output.encode('utf_8')) 
     
 ser.close()
