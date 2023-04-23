@@ -4,7 +4,6 @@ import random
 import serial
 import time
 
-
 with open('launch1.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     field = ["theta", "phi", "xAcc", "yAcc", "zAcc", "latitude", "longitude", "altitude", "altTrend"]
@@ -57,6 +56,8 @@ with open('launch1.csv', 'w', newline='') as file:
 
 ser = serial.Serial("COM4")
 
+dataRowIndex = 0
+
 # skip the first line(the header)
 with open('launch1.csv', 'r') as file:
     file_csv = reader(file)
@@ -66,8 +67,16 @@ with open('launch1.csv', 'r') as file:
     if head is not None:
         # Iterate over each row
         for row in file_csv:
-            time.sleep(.2)
-            output = ",".join(str(x) for x in row)
-            ser.write(output.encode('utf_8')) 
-    
+            # print to serial
+            output = ",".join(str(x) for x in row) + "\n"
+            ser.write(output.encode('ascii')) 
+        
+            # wait for acknowledge and/or change in state
+            while ser.in_waiting:
+                data = ser.readline().decode('ascii')
+                #checks first character to see if it's an acknowledge (%). if not,
+                #represents change in state. print to console
+                if(data[0] != '%'):
+                    print(data)
+
 ser.close()
