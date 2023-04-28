@@ -126,7 +126,24 @@ int[] pull_test_data(){
     i++
   }
   inputString[i] = '\0';
- .//TODO: PARSE INPUT AS ARR  
+  int formatData[9];
+  char c;
+  int buff = 0;
+  int i = 0;
+  int j = 0;
+  while (c != '\0') {
+    c = formatData[j];
+    if isDigit(c) {
+      buff *= 10;
+      buff += c - '0';    
+    }
+    if (c == ','){
+      formatData[i] = buff
+      i++;
+      buff = 0;      
+    }
+    j++;
+  }
   return formatInputString;
 }
 
