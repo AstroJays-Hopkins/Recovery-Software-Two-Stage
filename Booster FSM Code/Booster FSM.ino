@@ -1,7 +1,7 @@
 #include <LoRa.h>
 
 // Define the possible states for each set
-enum Recovery_State { IDLE_REC, DETECT_LAUNCH_IGN, VALID_FLIGHT_REC, DEPLOY_MAIN_REC };
+enum Recovery_State { IDLE_REC = 'I', DETECT_LAUNCH_IGN = 'D', VALID_FLIGHT_REC = 'F', DEPLOY_MAIN_REC = 'M'};
 
 //struct for packet
 typedef struct {
@@ -64,6 +64,7 @@ void loop() {
   // PLACEHOLDER READ DATA [TODO::Actually get the data]
   //variable assignment: {acceleration index, altitude, altitude_trend}
   int data[] = {0,0,0,0,0,0,0};
+  data = pull_test_data();
 
   //TODO::update method --> data = read_telemetry();
 
@@ -109,7 +110,46 @@ void loop() {
       break;
     
   }
-  broadcast_data();
+  send_test_data(StateSet1);
+  //broadcast_data(); //REMOVED FOR PYTHON TESTING
+}
+
+int[] pull_test_data(){
+  char inputString[25]; // declare a variable to store the input string
+  int i = 0;
+  while (Serial.available()) { // check if there is any data available in the serial port
+    char c = Serial.read(); // read a character from the serial port
+    if (c == '\n') { // check if the character is a newline character
+      break; // if yes, exit the loop
+    }
+    inputString[i] = c; // append the character to the input string
+    i++
+  }
+  inputString[i] = '\0';
+  int formatData[9];
+  char c;
+  int buff = 0;
+  int i = 0;
+  int j = 0;
+  while (c != '\0') {
+    c = formatData[j];
+    if isDigit(c) {
+      buff *= 10;
+      buff += c - '0';    
+    }
+    if (c == ','){
+      formatData[i] = buff
+      i++;
+      buff = 0;      
+    }
+    j++;
+  }
+  return formatInputString;
+}
+
+void send_test_data(enum Recovery_State state){
+  char outputString[25];
+  Serial.println();
 }
 
 Packet read_telemetry(){
