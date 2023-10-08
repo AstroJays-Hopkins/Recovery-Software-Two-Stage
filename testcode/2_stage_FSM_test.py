@@ -23,9 +23,7 @@ class IMU:
 
 # corresponding class to the Packet struct in the statemachines
 class Packet:
-    def __init__(
-        self, header, stage, latitude, longitude, altitude, alt_trend, imuPacket
-    ):
+    def __init__(self, header, stage, latitude, longitude, altitude, alt_trend, imuPacket):
         self.header = header
         self.padding0 = 0
         self.stage = stage
@@ -36,7 +34,7 @@ class Packet:
         self.padding3 = 0
         self.altitude = altitude
         self.padding4 = 0
-        self.alt_tend = alt_trend
+        self.alt_trend = alt_trend
         self.padding5 = 0
         self.imuPacket = imuPacket
 
@@ -73,18 +71,16 @@ def prep_next(df, time_step):
     full_data = df.iloc[time_step]
     time_step += 1
     imu_data = IMU(0, 0, 0, 0, 0, int(full_data["acceleration"]))
-    packet_data_class = Packet(
-        0x55, full_data["state"], 0, 0, int(full_data["height"]), 0, imu_data
-    )
+    packet_data_class = Packet(0x55, full_data["state"], 0, 0, int(full_data["height"]), 0, imu_data)
     struct_data = pack_data(packet_data_class)
-    print("Packed Data:", packed_data)
+    print("Packed Data:", struct_data)
     return struct_data, time_step
 
 
 print("Initalizing Connection...")
 # setup serial to arduino
 # TODO: fix port
-port = serial.Serial("COM7")
+port = serial.Serial("COM3")
 
 print("Loading Data..")
 # setup dataframe
@@ -94,12 +90,12 @@ print("Dataset Ready")
 
 
 # Example usage:
-imu_data = IMU(100, 200, 300, 400, 500, 600)
-packet_data = Packet(0x55, 1, 123456, 789012, 345, imu_data)
+# imu_data = IMU(100, 200, 300, 400, 500, 600)
+# packet_data = Packet(0x55, 1, 123456, 789012, 345, imu_data)
 
-# Pack the data and print the result
-packed_data = pack_data(packet_data)
-print("Packed Data:", packed_data)
+# # Pack the data and print the result
+# packed_data = pack_data(packet_data)
+# print("Packed Data:", packed_data)
 
 
 print("Begining send every " + str(DELAY) + " seconds")
