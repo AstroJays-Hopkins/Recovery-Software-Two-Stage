@@ -73,19 +73,36 @@ Packet read_telemetry()
     return packet;
 }
 
+// Define the LED pins
+const int ledPin1 = 2;
+const int ledPin2 = 3;
+const int ledPin3 = 4;
+
 // Setup for state machine
 void setup()
 {
+  // Set LED pins as output
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
+  pinMode(ledPin3, OUTPUT);
+
     // Attempt Lora setup
     Serial.begin(115200);
     while (!Serial)
         ;
 }
 
+void displayBinaryOnLEDs(int decimalNumber)
+{
+  // Extract individual bits and display on LEDs
+  digitalWrite(ledPin1, (decimalNumber & 0b001) ? HIGH : LOW);
+  digitalWrite(ledPin2, (decimalNumber & 0b010) ? HIGH : LOW);
+  digitalWrite(ledPin3, (decimalNumber & 0b100) ? HIGH : LOW);
+}
+
 void loop()
 {
     // variable assignment: {acceleration index, altitude, altitude_trend}
-    int data[] = {0, 0, 0, 0, 0, 0, 0};
-    data = read_telemetry();
-    Serial.print(data[0] + " " + data[1] + " " + data[2] + " " + data[3] + " " + data[4] + " " + data[5]);
+    Packet telemetry = read_telemetry();
+    displayBinaryOnLEDs(telemetry.altitude);
 }

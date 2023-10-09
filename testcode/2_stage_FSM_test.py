@@ -6,7 +6,7 @@ import struct
 
 print("Setting Up...")
 # settings
-DELAY = 0
+DELAY = .5
 time_step = 0
 
 
@@ -67,11 +67,17 @@ def pack_data(packet):
 # user facing function to get the next datapoint to send to teh rocket
 # FOR TESTING: only sends z.acc state and altitude (do not have gyro, long, lat, x.acc or y.acc)
 # NOTEL actually using height(from ground) NOT altitude (from sea level)
+altitude_fake = 0
+
 def prep_next(df, time_step):
+    global altitude_fake
     full_data = df.iloc[time_step]
     time_step += 1
     imu_data = IMU(0, 0, 0, 0, 0, int(full_data["acceleration"]))
-    packet_data_class = Packet(0x55, full_data["state"], 0, 0, int(full_data["height"]), 0, imu_data)
+    # packet_data_class = Packet(0x55, full_data["state"], 0, 0, int(full_data["height"]), 0, imu_data)
+    packet_data_class = Packet(0x55, full_data["state"], 0, 0, altitude_fake, 0, imu_data)
+    altitude_fake = (altitude_fake+1)%8
+    # print(altitude_fake)
     struct_data = pack_data(packet_data_class)
     print("Packed Data:", struct_data)
     return struct_data, time_step
@@ -103,7 +109,7 @@ print("Begining send every " + str(DELAY) + " seconds")
 while df.shape[0] > time_step:
     data, time_step = prep_next(df, time_step)
     port.write(data)
-    res = port.readline()
-    print(res)
+    # res = port.readline()
+    # print(res)
     time.sleep(DELAY)
     print(time_step)
