@@ -75,7 +75,7 @@ def prep_next(df, time_step):
     time_step += 1
     imu_data = IMU(0, 0, 0, 0, 0, int(full_data["acceleration"]))
     # packet_data_class = Packet(0x55, full_data["state"], 0, 0, int(full_data["height"]), 0, imu_data)
-    packet_data_class = Packet(0x55, full_data["state"], 0, 0, altitude_fake, 0, imu_data)
+    packet_data_class = Packet(0x55, int(full_data["state"]), 0, 0, altitude_fake, 0, imu_data)
     altitude_fake = (altitude_fake+1)%8
     # print(altitude_fake)
     struct_data = pack_data(packet_data_class)
@@ -108,8 +108,9 @@ print("Begining send every " + str(DELAY) + " seconds")
 
 while df.shape[0] > time_step:
     data, time_step = prep_next(df, time_step)
+    print(struct.calcsize(data))
     port.write(data)
-    # res = port.readline()
-    # print(res)
+    res = port.readline()
+    print(res)
     time.sleep(DELAY)
     print(time_step)
