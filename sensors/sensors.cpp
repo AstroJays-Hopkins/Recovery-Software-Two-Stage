@@ -2,6 +2,8 @@
 #include <SD.h>
 #include <LoRa.h>
 #include "MPU6050_6Axis_MotionApps20.h"
+#include <SparkFun_MMC5983MA_Arduino_Library.h>
+
 
 typedef struct {
   uint16_t xGyro; //4
@@ -10,8 +12,6 @@ typedef struct {
   uint16_t xAcc; //4
   uint16_t yAcc; //4
   uint16_t zAcc; //4
-
-  void to_string()
 
 } __attribute__((packed)) IMU;
 
@@ -27,6 +27,9 @@ typedef struct {
   uint32_t altitude; //4
   char padding4; //1
   IMU imuPacket; // 24
+  uint32_t mpu_X;
+  uint32_t mpu_Y;
+  uint32_t mpu_Z;
 } __attribute__((packed)) Packet;
 
 const int intended_packet_size = sizeof(Packet);
@@ -71,7 +74,7 @@ void dmpDataReady() {
     mpuInterrupt = true;
 }
 
-void get_bmp_data(MPU6050& mpu, Packet& output){
+void get_mpu_data(MPU6050& mpu, Packet& output){
     int16_t ax, ay, az;
 
     int16_t gx, gy, gz;
@@ -79,6 +82,37 @@ void get_bmp_data(MPU6050& mpu, Packet& output){
     if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) {
         accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-        output.
+        output.imuPacket.xAcc = ax;
+        output.imuPacket.xAcc = ay;
+        output.imuPacket.xAcc = az;
+        output.imuPacket.xGyro = gx;
+        output.imuPacket.yGyro = gy;
+        output.imuPacket.zGyro = gz;
     }
 }
+
+void interruptRoutine()
+{
+    newDataAvailable = true;
+}
+
+void get_mpu_data(SFE_MMC5983MA& myMag, Packet& output){
+    uint32_t rawValueX = 0;
+    uint32_t rawValueY = 0;
+    uint32_t rawValueZ = 0;
+    if (newDataAvailable == true){
+        newDataAvailable = false; // Clear our interrupt flag
+        myMag.clearMeasDoneInterrupt(); // Clear the MMC5983 interrupt
+
+        // Read all three channels simultaneously
+        // Note: we are calling readFieldsXYZ to read the fields, not getMeasurementXYZ
+        // The measurement is already complete, we do not need to start a new one
+        myMag.readFieldsXYZ(&rawValueX, &rawValueY, &rawValueZ);
+
+        output.mpu_X = rawValueX;
+        output.mpu_Y = rawValueY;
+        output.mpu_Z = rawValueZ;
+    }
+}
+
+
