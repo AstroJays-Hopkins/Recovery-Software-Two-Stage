@@ -1,82 +1,58 @@
 import csv
 from csv import reader
 import random
-import serial
 import time
 
 with open('launch1.csv', 'w', newline='') as file:
     writer = csv.writer(file)
-    field = ["theta", "phi", "xAcc", "yAcc", "zAcc", "latitude", "longitude", "altitude", "altTrend"]
+    field = ["state","theta", "phi", "acceleration", "height"]
     writer.writerow(field)
 
-    theta = phi = xAcc = yAcc = zAcc = latitude = longitude = alt_index = alt_trend = 0
-    variability = 0
+    theta = phi = acc = alt = 0
+    variance = 1
 
     #pre launch
+    state = 0
     for i in range(10):
-        writer.writerow([theta, phi, xAcc, yAcc, zAcc, latitude, longitude, alt_index, alt_trend])
+        writer.writerow([state, round(theta, 2), round(phi, 2),round(acc, 2) , round(alt, 2) ])
 
-    zAcc = 1000
-    alt_trend = 1
-    #until acceleration becomes negative
-    for i in range(100):
+    acc = 600
+    state = 1
+    #booster ignition
+    while acc > -10:
         #variability = random.uniform(1, 3)
-        alt_index += 15 + variability
-        zAcc -= 11 - variability
+        alt += acc/10 + random.gauss(0, variance)
+        acc = acc*.995 - 2*random.gauss(1, variance)
+        theta = random.gauss(0, variance)
+        phi = random.gauss(0, variance)
         
-        writer.writerow([theta, phi, xAcc, yAcc, zAcc, latitude, longitude, alt_index, alt_trend])
+        writer.writerow([state, round(theta, 2), round(phi, 2),round(acc, 2) , round(alt, 2) ])
     
-    #sustainer fire, acceleration grows super fast
-    for i in range(15):
+    acc = 600
+    state = 2
+    #sustainer ignition
+    while acc > -10:
         #variability = random.uniform(1, 3)
-        alt_index += 20 + variability
-        zAcc += 100 - variability
+        alt += acc/10 + random.gauss(0, variance)
+        acc = acc*.995 - 2*random.gauss(1, variance)
+        theta = random.gauss(0, variance)
+        phi = random.gauss(0, variance)
         
-        writer.writerow([theta, phi, xAcc, yAcc, zAcc, latitude, longitude, alt_index, alt_trend])
+        writer.writerow([state, round(theta, 2), round(phi, 2),round(acc, 2) , round(alt, 2)])
 
-    #until apogee
-    for i in range(50):
-        #ariability = random.uniform(1, 3)
-        alt_index += 15 + variability
-        zAcc -= 11 - variability
-        
-        writer.writerow([theta, phi, xAcc, yAcc, zAcc, latitude, longitude, alt_index, alt_trend])
+    #descent
+    state = 3
+    while(alt > 0):
+        alt -= 3 + random.gauss(0, variance)
+        acc -= 0 - random.gauss(0, variance)
+        theta = random.gauss(0, 2*variance)
+        phi = random.gauss(0, 2*variance)
 
-    alt_trend = -1
-    while(alt_index > 0):
-        #variability = random.uniform(1, 3)
-        alt_index -= 15 + variability
-        zAcc -= 4 - variability
+        writer.writerow([state, round(theta, 2), round(phi, 2),round(acc, 2) , round(alt, 2) ])
 
-        writer.writerow([theta, phi, xAcc, yAcc, zAcc, latitude, longitude, alt_index, alt_trend])
-
-    theta = phi = xAcc = yAcc = zAcc = latitude = longitude = alt_index = alt_trend = 0
+    #on ground
+    state = 4
+    theta = phi = acc = alt= 0
     for i in range(10):
-        writer.writerow([theta, phi, xAcc, yAcc, zAcc, latitude, longitude, alt_index, alt_trend])
+        writer.writerow([state, round(theta, 2), round(phi, 2),round(acc, 2) , round(alt, 2) ])
 
-ser = serial.Serial("COM4")
-
-dataRowIndex = 0
-
-# skip the first line(the header)
-with open('launch1.csv', 'r') as file:
-    file_csv = reader(file)
-    head = next(file_csv)
-    
-    # check if the file is empty or not
-    if head is not None:
-        # Iterate over each row
-        for row in file_csv:
-            # print to serial
-            output = ",".join(str(x) for x in row) + "\n"
-            ser.write(output.encode('ascii')) 
-        
-            # wait for acknowledge and/or change in state
-            while ser.in_waiting:
-                data = ser.readline().decode('ascii')
-                #checks first character to see if it's an acknowledge (%). if not,
-                #represents change in state. print to console
-                if(data[0] != '%'):
-                    print(data)
-
-ser.close()
