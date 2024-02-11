@@ -1,3 +1,4 @@
+#include <Wire.h>
 #include <LoRa.h>
 
 // Define the possible states for each set
