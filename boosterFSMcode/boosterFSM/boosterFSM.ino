@@ -293,7 +293,6 @@ void setup()
 void loop()
 {
   delay(10); // Add a delay of 1 second (adjust as needed)
-  // PLACEHOLDER READ DATA [TODO::Actually get the data]
   // variable assignment: {acceleration, altitude, altitude_mean, accel_mean, abs_gyro_tilt}
   if (data[1] > max_height){
     max_height = data[1];
@@ -351,8 +350,8 @@ void loop()
 
   // State to represent further confirmation of launch with height floor
   case VALID_FLIGHT_REC:
-    // Serial.println("VALID_FLIGHT_REC");
-    Serial.println(data[2] - max_height);
+    Serial.println("VALID_FLIGHT_REC");
+    //Serial.println(data[2] - max_height);
     // index[2] = atitude trend
     // check if altitude is trending downwards
     if (data[1] < max_height - APPOGEE_DROP_THRESHOLD)
