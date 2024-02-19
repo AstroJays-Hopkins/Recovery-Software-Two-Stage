@@ -15,6 +15,9 @@ enum Ignition_State { IDLE_IGN, DETECT_LAUNCH_IGN, VALID_FLIGHT_IGN, LOCKOUT_IGN
 const int LAsampleSize = 10;
 int LARawMin = 0;
 int LARawMax = 1023;
+float LAX0 = 0;
+float LAY0 = 0;
+float LAZ0 = 0;
 
 //%%%%%%%%%%%%%%%%%%%%%%%% IMU SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 #define BNO055_SAMPLERATE_DELAY_MS (100)
@@ -52,9 +55,9 @@ int base_height = 0;
 // TODO::ENSURE THAT ACCELERATION IS change in height over time NOT absolute accel to prevent issues with sideways travel
 // ENSURE THIS IS ALTITUDE ABOVE GROUND NOT FROM SEA
 float HEIGHT_FLOOR = 20; //0.00776714; // TEMP height floor in 8-miles
-float MAIN_TRIGGER = 1000;//0.0142045;  // TEMP main trigger in 8-miles
+float MAIN_TRIGGER = 30;//0.0142045;  // TEMP main trigger in 8-miles
 int APPOGEE_DROP_THRESHOLD = 10;
-int IGNITION_SLOW_THRESH = 10;
+int IGNITION_SLOW_THRESH = 0.15;
 float data[] = {0, 0, 0, 0, 0, 0, 0}; //accel, alt, alt average, 
 float alt_trend[] = {0,0,0,0,0,0,0,0,0,0};
 int mem_pointer = 0;
@@ -91,6 +94,7 @@ int ReadAxis(int axisPin)
 	return reading/LAsampleSize;
 }
 
+
 float calculateAngleDifference(float final_angle, float initial_angle) {
   // Calculate the smallest difference between two angles considering wrap-around
   float difference = final_angle - initial_angle;
@@ -114,11 +118,11 @@ void read_telemetry(float result[3]) {
     long xScaled = map(xRaw, LARawMin, LARawMax, -3000, 3000);
     long yScaled = map(yRaw, LARawMin, LARawMax, -3000, 3000);
     long zScaled = map(zRaw, LARawMin, LARawMax, -3000, 3000);
-
-    // re-scale to fractional Gs
-    float xAccel = xScaled / 1000.0;
-    float yAccel = yScaled / 1000.0;
-    float zAccel = zScaled / 1000.0;
+    
+    // // re-scale to fractional Gs
+    float xAccel = xScaled / 1000.0 - LAX0;
+    float yAccel = yScaled / 1000.0 - LAY0;
+    float zAccel = zScaled / 1000.0 - LAZ0;
     data[0] = zAccel;
     Serial.print("zAccel: ");
     Serial.println(data[0]);
@@ -196,6 +200,28 @@ int calibrate(){
         delay(15);
       }
     alt0 /= num_points;            //normalize to the number of samples collected
+  }
+  //Setup Accelerometer  
+  {
+    for (int x = 0; x < calibrate_length; x++){
+      //Read raw values
+      int xRaw = ReadAxis(xInput);
+      int yRaw = ReadAxis(yInput);
+      int zRaw = ReadAxis(zInput);
+
+      // Convert raw values to 'milli-Gs"
+      long xScaled = map(xRaw, LARawMin, LARawMax, -3000, 3000);
+      long yScaled = map(yRaw, LARawMin, LARawMax, -3000, 3000);
+      long zScaled = map(zRaw, LARawMin, LARawMax, -3000, 3000);
+      
+      // // re-scale to fractional Gs
+      LAX0 += xScaled / 1000.0;
+      LAY0 += yScaled / 1000.0;
+      LAZ0 += zScaled / 1000.0;
+    }
+    LAX0 /= calibrate_length;
+    LAY0 /= calibrate_length;
+    LAZ0 /= calibrate_length;
   }
   tone(buzzerPin, 440); // A4
   delay(50);
@@ -296,7 +322,7 @@ void setup()
 
 
 void loop() {
-  delay(500); // Add a delay of 1 second (adjust as needed)
+  delay(50); // Add a delay of 1 second (adjust as needed)
   //variable assignment: {acceleration, altitude, altitude_trend, accel_trend, gyro tilt}
   if (data[1] > max_height){
     max_height = data[1];
@@ -333,8 +359,8 @@ void loop() {
       break;
     
     //state to represent the rocket post launch (can mistake heavy jostling for launch)
-    case DETECT_LAUNCH_IGN:
-      printout = "DETECT_LAUNCH_IGN";
+    case DETECT_LAUNCH_REC:
+      printout = "DETECT_LAUNCH_REC";
       //Placeholder condition for confirming launch
       //1 = altitude 
       if (data[1] >= HEIGHT_FLOOR) { 
@@ -400,11 +426,11 @@ void loop() {
     case VALID_FLIGHT_IGN:
       printout = printout + ", VALID_FLIGHT_IGN";
       //if any tilt exists initiate lockout to avoid Missiling
-      if (abs(data[4]) >= 5) {//
+      if (abs(data[4]) >= 400) {//
         StateSet2 = LOCKOUT_IGN;
       }
       // detect time to ignite based on slowing down
-      if (data[0] < -IGNITION_SLOW_THRESH) {
+      else if (data[0] < -IGNITION_SLOW_THRESH) {
         StateSet2 = IGNITE_IGN;
       }
       break;
