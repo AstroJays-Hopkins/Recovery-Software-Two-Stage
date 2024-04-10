@@ -68,7 +68,7 @@ float acc_trend[] = {0,0,0,0,0,0,0,0,0,0};
 
 //%%%%%%%%%%%%%%%%%%%%%%%% PIN SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 //pin settings
-int buzzerPin = 2;
+int buzzerPin = 4;
 const int xInput = A0;
 const int yInput = A1;
 const int zInput = A2;
@@ -241,6 +241,10 @@ void setup()
   
   // Attempt Lora setup
   Serial.begin(115200);
+  delay(100);
+  while (!Serial) ;
+
+  Serial.println("HI MAX");
 
   //Buzzer Code
   pinMode(buzzerPin, OUTPUT);
@@ -292,6 +296,8 @@ void setup()
 
 void loop()
 {
+  while (!Serial) ;
+  Serial.println("HI MAX");
   delay(10); // Add a delay of 1 second (adjust as needed)
   // variable assignment: {acceleration, altitude, altitude_mean, accel_mean, abs_gyro_tilt}
   if (data[1] > max_height){

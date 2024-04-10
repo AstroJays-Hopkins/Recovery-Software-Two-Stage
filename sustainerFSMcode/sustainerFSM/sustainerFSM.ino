@@ -67,7 +67,7 @@ float acc_trend[] = {0,0,0,0,0,0,0,0,0,0};
 
 //%%%%%%%%%%%%%%%%%%%%%%%% PIN SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 //pin settings
-int buzzerPin = 2;
+int buzzerPin = 4;
 const int xInput = A0;
 const int yInput = A1;
 const int zInput = A2;
