@@ -250,7 +250,7 @@ void setup()
   pinMode(buzzerPin, OUTPUT);
 
   //LA setup
-  analogReference(EXTERNAL);
+  // analogReference(EXTERNAL);
   //TODO Fix Analoge Reference
 
   
