@@ -68,9 +68,9 @@ float acc_trend[] = {0,0,0,0,0,0,0,0,0,0};
 //%%%%%%%%%%%%%%%%%%%%%%%% PIN SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 //pin settings
 int buzzerPin = 4;
-const int xInput = A0;
-const int yInput = A1;
-const int zInput = A2;
+const int xInput = A1;
+const int yInput = A2;
+const int zInput = A3;
 
 //sensor settings
 const int Mode = 1; //1:sensor 2: test from laptop

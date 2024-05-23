@@ -19,9 +19,9 @@ enum Recovery_State
 
 //%%%%%%%%%%%%%%%%%%%%%%%% ACCELEROMETER SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 
-const int LAsampleSize = 10;
-int LARawMin = 0;
-int LARawMax = 1023;
+// const int LAsampleSize = 10;
+// int LARawMin = 0;
+// int LARawMax = 1023;
 
 //%%%%%%%%%%%%%%%%%%%%%%%% IMU SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 #define BNO055_SAMPLERATE_DELAY_MS (100)
@@ -45,12 +45,12 @@ unsigned long T1;
 unsigned long T;
 
 //%%%%%%%%%%%%%%%%%%%%%%%% DATALOGGER SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
-int chipSelect = 53;
+int chipSelect = 4;
 
 //%%%%%%%%%%%%%%%%%%%%%%%% FSM SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 // Define the initial state for each set
 Recovery_State StateSet1 = IDLE_REC;
-int calibrate_length = 100; //sets how many iterations of average sensor readings we take on launch pad
+int calibrate_length = 5; //sets how many iterations of average sensor readings we take on launch pad
 
 
 //memory
@@ -68,10 +68,10 @@ float acc_trend[] = {0,0,0,0,0,0,0,0,0,0};
 
 //%%%%%%%%%%%%%%%%%%%%%%%% PIN SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 //pin settings
-int buzzerPin = 4;
-const int xInput = A0;
-const int yInput = A1;
-const int zInput = A2;
+int buzzerPin = 9;
+// const int xInput = A0;
+// const int yInput = A1;
+// const int zInput = A2;
 
 //sensor settings
 const int Mode = 1; //1:sensor 2: test from laptop
@@ -82,18 +82,18 @@ void read_telemetry_test(String result[2]) {
   result[1] = Serial.readStringUntil('\n');
 }
 
-// Take samples and return the average
-int ReadAxis(int axisPin)
-{
-	long reading = 0;
-	analogRead(axisPin);
-	delay(1);
-	for (int i = 0; i < LAsampleSize; i++)
-	{
-	reading += analogRead(axisPin);
-	}
-	return reading/LAsampleSize;
-}
+// // Take samples and return the average
+// int ReadAxis(int axisPin)
+// {
+// 	long reading = 0;
+// 	analogRead(axisPin);
+// 	delay(1);
+// 	for (int i = 0; i < LAsampleSize; i++)
+// 	{
+// 	reading += analogRead(axisPin);
+// 	}
+// 	return reading/LAsampleSize;
+// }
 
 float calculateAngleDifference(float final_angle, float initial_angle) {
   // Calculate the smallest difference between two angles considering wrap-around
@@ -108,25 +108,26 @@ float calculateAngleDifference(float final_angle, float initial_angle) {
 
 void read_telemetry(float result[3]) {
   //Lin-Accel
-  {
-    //Read raw values
-    int xRaw = ReadAxis(xInput);
-    int yRaw = ReadAxis(yInput);
-    int zRaw = ReadAxis(zInput);
+  data[0] = 0;
+  // {
+  //   //Read raw values
+  //   int xRaw = ReadAxis(xInput);
+  //   int yRaw = ReadAxis(yInput);
+  //   int zRaw = ReadAxis(zInput);
 
-    // Convert raw values to 'milli-Gs"
-    long xScaled = map(xRaw, LARawMin, LARawMax, -3000, 3000);
-    long yScaled = map(yRaw, LARawMin, LARawMax, -3000, 3000);
-    long zScaled = map(zRaw, LARawMin, LARawMax, -3000, 3000);
+  //   // Convert raw values to 'milli-Gs"
+  //   long xScaled = map(xRaw, LARawMin, LARawMax, -3000, 3000);
+  //   long yScaled = map(yRaw, LARawMin, LARawMax, -3000, 3000);
+  //   long zScaled = map(zRaw, LARawMin, LARawMax, -3000, 3000);
 
-    // re-scale to fractional Gs
-    float xAccel = xScaled / 1000.0;
-    float yAccel = yScaled / 1000.0;
-    float zAccel = zScaled / 1000.0;
-    data[0] = zAccel;
-    Serial.print("zAccel: ");
-    Serial.println(data[0]);
-  }
+  //   // re-scale to fractional Gs
+  //   float xAccel = xScaled / 1000.0;
+  //   float yAccel = yScaled / 1000.0;
+  //   float zAccel = zScaled / 1000.0;
+  //   data[0] = zAccel;
+  //   Serial.print("zAccel: ");
+  //   Serial.println(data[0]);
+  // }
   //altitude
   {
     data[1] = baro.getHeightCentiMeters()/30.48 - alt0;
@@ -158,7 +159,6 @@ void read_telemetry(float result[3]) {
 }
 
 int calibrate(){
-
   int song[7] = {440,494,523,587,659,698,784};
   {//Setup Gyro True North
     for (int i = 0; i<calibrate_length;i++){
@@ -238,67 +238,78 @@ float mean(float arr[]){
 // Setup for state machine
 void setup()
 {
-  
-  // Attempt Lora setup
-  Serial.begin(115200);
-  delay(100);
-  while (!Serial) ;
-
-  Serial.println("HI MAX");
-
   //Buzzer Code
   pinMode(buzzerPin, OUTPUT);
+  tone(buzzerPin, 587); // Turn the buzzer on
+  delay(100); // Wait for 500 milliseconds
+  tone(buzzerPin, 342); // Turn the buzzer off
+  delay(500); 
+  noTone(buzzerPin);
+  // Attempt Lora setup
+  Serial.begin(115200);
+
+  tone(buzzerPin, 587); // Turn the buzzer on
+  delay(100); // Wait for 500 milliseconds
+  tone(buzzerPin, 342); // Turn the buzzer off
+  delay(500); 
+  noTone(buzzerPin);  
 
   //LA setup
   // analogReference(EXTERNAL);
   //TODO Fix Analoge Reference
 
-  
   //IMU
   bno.begin();
   bno.setExtCrystalUse(true);
   uint8_t system, gyro, accel, mag;
   system = gyro = accel = mag = 0;
   bno.getCalibration(&system, &gyro, &accel, &mag);
-  Serial.println("Sensors Initialized");
+  Serial.println("6");
+  // Serial.println("Sensors Initialized");
 
   //Altimiter 
   baro.init();
 
   //SD Card
   //initialize datalogging
-    if (!SD.begin(chipSelect)) {
-      Serial.println("Card failed, or not present");
-    }
+  
+  if (!SD.begin(chipSelect)) {
+    Serial.println("1");
+    // Serial.println("Card failed, or not present");
+  }
+  else{
+    File dataFile = SD.open("Flight.txt", FILE_WRITE);
+    if (dataFile){
+        dataFile.println("2");
+        // dataFile.println("Beginning New Flight");
+        dataFile.close();
+        Serial.println("3");
+        // Serial.println("New Datalog Created");
+      }
     else{
-      File dataFile = SD.open("Flight.txt", FILE_WRITE);
-
-      if (dataFile){
-          dataFile.println("Beginning New Flight");
-          dataFile.close();
-          Serial.println("New Datalog Created");
-        }
-      else{
-          Serial.println("error opening file Flight.txt");
-          return;
-        }
-      Serial.println("Initialization Complete");
-    }
+        Serial.println("4");
+        // Serial.println("error opening file Flight.txt");
+        return;
+      }
+    Serial.println("5");
+    // Serial.println("Initialization Complete");
+  }
   
   //fail case
-  if (calibrate() == 0){
-    while(1) {
-      //failed setup
-    }
-  }
+  // if (calibrate() == 0){
+  //   while(1) {
+  //     //failed setup
+  //   }
+  // }
+  return;
+  calibrate();
+  
 }
 
 
 void loop()
 {
-  while (!Serial) ;
-  Serial.println("HI MAX");
-  delay(10); // Add a delay of 1 second (adjust as needed)
+  // delay(10); // Add a delay of 1 second (adjust as needed)
   // variable assignment: {acceleration, altitude, altitude_mean, accel_mean, abs_gyro_tilt}
   if (data[1] > max_height){
     max_height = data[1];
