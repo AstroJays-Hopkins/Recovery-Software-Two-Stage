@@ -9,6 +9,21 @@
 enum Recovery_State { IDLE_REC, DETECT_LAUNCH_REC, VALID_FLIGHT_REC, DEPLOY_DROGUE_REC, DEPLOY_MAIN_REC };
 enum Ignition_State { IDLE_IGN, DETECT_LAUNCH_IGN, VALID_FLIGHT_IGN, LOCKOUT_IGN, IGNITE_IGN };
 
+//%%%%%%%%%%%%%%%%%%%%%%%% FLIGHT OPS PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%//
+
+//TBD
+#define FSM_SPEED 15 //manual delay per FSM iteration [helps for testing 0 for launch]
+#define IGNITION_DELAY 1000
+#define LAUNCH_FLOOR 100
+#define MAIN_CHUTE_ALT 1000 
+#define DECELERATION_DELAY 1000 //delay from when we detect motor burnout before sep
+#define DECELERATION_THRESHOLD .15  //-z_accel threshold for motorburn detection. 
+#define DROUGE_DIST_FROM_APPOGEE 10 //-change in alt from apogee before drouge
+#define LOCKOUT_DEGREE_SQUARED 400 //degrees of bad tilt squared before lockout
+#define MAIN_PIN 5 //relay pins to be set
+#define DROUGE_PIN 6
+#define SUSTAINER_PIN 7 
+
 
 //%%%%%%%%%%%%%%%%%%%%%%%% ACCELEROMETER SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 
@@ -54,10 +69,10 @@ int max_height = 0;
 int base_height = 0;
 // TODO::ENSURE THAT ACCELERATION IS change in height over time NOT absolute accel to prevent issues with sideways travel
 // ENSURE THIS IS ALTITUDE ABOVE GROUND NOT FROM SEA
-float HEIGHT_FLOOR = 20; //0.00776714; // TEMP height floor in 8-miles
-float MAIN_TRIGGER = 30;//0.0142045;  // TEMP main trigger in 8-miles
-int APPOGEE_DROP_THRESHOLD = 10;
-int IGNITION_SLOW_THRESH = 0.15;
+float HEIGHT_FLOOR = LAUNCH_FLOOR; //0.00776714; // TEMP height floor in 8-miles
+float MAIN_TRIGGER = MAIN_CHUTE_ALT;//0.0142045;  // TEMP main trigger in 8-miles
+int APPOGEE_DROP_THRESHOLD = DROUGE_DIST_FROM_APPOGEE;
+int IGNITION_SLOW_THRESH = DECELERATION_THRESHOLD;
 float data[] = {0, 0, 0, 0, 0, 0, 0}; //accel, alt, alt average, 
 float alt_trend[] = {0,0,0,0,0,0,0,0,0,0};
 int mem_pointer = 0;
@@ -132,10 +147,6 @@ void read_telemetry(float result[3]) {
     data[1] = baro.getHeightCentiMeters()/30.48 - alt0;
     Serial.print("Displayed altitude: ");
     Serial.println(data[1]);
-    // Serial.print("Read altitude: ");
-    // Serial.println(data[1] + alt0);
-    // Serial.print("Zero altitude: ");
-    // Serial.println(alt0);
   }
   //gyro
   {
@@ -264,22 +275,31 @@ int mean(int arr[]){
   return counter/10;
 }
 
+void do_ignite(){
+  delay(DECELERATION_DELAY + IGNITION_DELAY)
+  digitalWrite(SUSTAINER_PIN, HIGH);
+}
+void do_main(){
+  digitalWrite(MAIN_PIN, HIGH);
+}
+void do_drouge(){
+  digitalWrite(DROUGE_PIN, HIGH);
+}
 
 // Setup for state machine
 void setup()
 {
-  
   // Attempt Lora setup
   Serial.begin(115200);
 
   //Buzzer Code
   pinMode(buzzerPin, OUTPUT);
 
-  //LA setup
-  // analogReference(EXTERNAL);
-  //TODO Fix Analoge Reference
+  //Relay Setup
+  pinMode(MAIN_PIN, OUTPUT);
+  pinMode(DROUGE_PIN, OUTPUT);
+  pinMode(SUSTAINER_PIN, OUTPUT);
 
-  
   //IMU
   bno.begin();
   bno.setExtCrystalUse(true);
@@ -322,7 +342,7 @@ void setup()
 
 
 void loop() {
-  delay(50); // Add a delay of 1 second (adjust as needed)
+  delay(FSM_SPEED); // Add a delay of 1 second (adjust as needed)
   //variable assignment: {acceleration, altitude, altitude_trend, accel_trend, gyro tilt}
   if (data[1] > max_height){
     max_height = data[1];
@@ -350,8 +370,6 @@ void loop() {
     //State to represent the rocket pre launch 
     case IDLE_REC: 
       printout = "IDLE_REC";
-      //Placeholder condition for detecting launch
-      //0 = acceleration index
       //check for change in acceleration and set state to detecting launch
       if (data[0] >= 0) {
         StateSet1 = DETECT_LAUNCH_REC;
@@ -386,7 +404,7 @@ void loop() {
     //State to trigger drogue deploy at apogee
     case DEPLOY_DROGUE_REC:
       printout = "DEPLOY_DROGUE_REC";
-      //deploy_drogue();
+      do_drogue();
       if (data[1] <= MAIN_TRIGGER) {
         StateSet1 = DEPLOY_MAIN_REC; 
       }
@@ -395,7 +413,7 @@ void loop() {
     //State to trigger main deploy at floor
     case DEPLOY_MAIN_REC:
       printout = "DEPLOY_MAIN_REC"; 
-      //deploy_main();
+      do_main();
       //END STATE
       break;
   }
@@ -426,7 +444,7 @@ void loop() {
     case VALID_FLIGHT_IGN:
       printout = printout + ", VALID_FLIGHT_IGN";
       //if any tilt exists initiate lockout to avoid Missiling
-      if (abs(data[4]) >= 400) {//
+      if (abs(data[4]) >= LOCKOUT_DEGREE_SQUARED) {//
         StateSet2 = LOCKOUT_IGN;
       }
       // detect time to ignite based on slowing down
@@ -442,7 +460,7 @@ void loop() {
       break;
     case IGNITE_IGN:
       printout = printout + ", IGNITE_IGN";
-      //do_ignite();
+      do_ignite();
       //END STATE
       break;
   }
@@ -465,6 +483,4 @@ void loop() {
     Serial.println("error opening file Flight.txt");
   }
   Serial.println(printout);
-  // broadcast_data();
-  // Add any other code you want to run continuously in your loop here
 }
