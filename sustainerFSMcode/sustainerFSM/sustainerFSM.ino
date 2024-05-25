@@ -11,18 +11,24 @@ enum Ignition_State { IDLE_IGN, DETECT_LAUNCH_IGN, VALID_FLIGHT_IGN, LOCKOUT_IGN
 
 //%%%%%%%%%%%%%%%%%%%%%%%% FLIGHT OPS PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%//
 
+
+//TODO:
+// 1) start timer at alt = 5
+// 2) implement camera code - sus only
+
+
 //TBD
 #define FSM_SPEED 15 //manual delay per FSM iteration [helps for testing 0 for launch]
 #define IGNITION_DELAY 1000
 #define LAUNCH_FLOOR 100
 #define MAIN_CHUTE_ALT 1000 
 #define DECELERATION_DELAY 1000 //delay from when we detect motor burnout before sep
-#define DECELERATION_THRESHOLD .15  //-z_accel threshold for motorburn detection. 
+#define BOOSTER_BURN 1000 //milliseconds of expected burn
 #define DROUGE_DIST_FROM_APPOGEE 10 //-change in alt from apogee before drouge
 #define LOCKOUT_DEGREE_SQUARED 400 //degrees of bad tilt squared before lockout
-#define MAIN_PIN 5 //relay pins to be set
-#define DROUGE_PIN 6
-#define SUSTAINER_PIN 7 
+#define MAIN_PIN 11 //relay pins to be set
+#define DROUGE_PIN 10
+#define SUSTAINER_PIN 12 
 
 
 //%%%%%%%%%%%%%%%%%%%%%%%% ACCELEROMETER SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
@@ -67,12 +73,12 @@ int calibrate_length = 100; //sets how many iterations of average sensor reading
 //memory
 int max_height = 0;
 int base_height = 0;
+unsigned long startTime;
 // TODO::ENSURE THAT ACCELERATION IS change in height over time NOT absolute accel to prevent issues with sideways travel
 // ENSURE THIS IS ALTITUDE ABOVE GROUND NOT FROM SEA
 float HEIGHT_FLOOR = LAUNCH_FLOOR; //0.00776714; // TEMP height floor in 8-miles
 float MAIN_TRIGGER = MAIN_CHUTE_ALT;//0.0142045;  // TEMP main trigger in 8-miles
 int APPOGEE_DROP_THRESHOLD = DROUGE_DIST_FROM_APPOGEE;
-int IGNITION_SLOW_THRESH = DECELERATION_THRESHOLD;
 float data[] = {0, 0, 0, 0, 0, 0, 0}; //accel, alt, alt average, 
 float alt_trend[] = {0,0,0,0,0,0,0,0,0,0};
 int mem_pointer = 0;
@@ -121,6 +127,28 @@ float calculateAngleDifference(float final_angle, float initial_angle) {
   return difference;
 }
 
+float calculateInclination(double pitchDegrees, double yawDegrees) {
+    // Convert degrees to radians
+    double pitch = pitchDegrees * DEG_TO_RAD;
+    double yaw = yawDegrees * DEG_TO_RAD;
+
+    // Calculate direction vector components
+    double v_x = cos(pitch) * cos(yaw);
+    double v_y = cos(pitch) * sin(yaw);
+    double v_z = sin(pitch);
+
+    // Calculate the magnitude of the vector
+    double v_magnitude = sqrt(v_x * v_x + v_y * v_y + v_z * v_z);
+
+    // Calculate the inclination angle
+    double alpha = acos(sqrt(v_y*v_y + v_z*v_z) / v_magnitude);
+
+    // Convert radians to degrees for the final result
+    float alphaDegrees = abs(90 - alpha * RAD_TO_DEG);
+
+    return alphaDegrees;
+}
+
 void read_telemetry(float result[3]) {
   //Lin-Accel
   {
@@ -162,15 +190,18 @@ void read_telemetry(float result[3]) {
     Serial.println(ang[2]);
     Serial.print("ang2: ");
     Serial.println(ang[3]);
-    data[4] = (ang[2]*ang[2])+(ang[3]*ang[3]);
+    // data[4] = (ang[2]*ang[2])+(ang[3]*ang[3]);
+    data[4] = calculateInclination(ang[2],ang[3]);
     Serial.print("bad_tilt: ");
     Serial.println(data[4]);
   }
 }
 
 int calibrate(){
-
   int song[7] = {440,494,523,587,659,698,784};
+  {//Setup Burnout Code
+    startTime = millis();
+  }
   {//Setup Gyro True North
     for (int i = 0; i<calibrate_length;i++){
       ///Gyro Calibration Summation
@@ -276,7 +307,7 @@ int mean(int arr[]){
 }
 
 void do_ignite(){
-  delay(DECELERATION_DELAY + IGNITION_DELAY)
+  delay(DECELERATION_DELAY + IGNITION_DELAY);
   digitalWrite(SUSTAINER_PIN, HIGH);
 }
 void do_main(){
@@ -302,7 +333,7 @@ void setup()
 
   //IMU
   bno.begin();
-  bno.setExtCrystalUse(true);
+  bno.setExtCrystalUse(false);
   uint8_t system, gyro, accel, mag;
   system = gyro = accel = mag = 0;
   bno.getCalibration(&system, &gyro, &accel, &mag);
@@ -404,7 +435,7 @@ void loop() {
     //State to trigger drogue deploy at apogee
     case DEPLOY_DROGUE_REC:
       printout = "DEPLOY_DROGUE_REC";
-      do_drogue();
+      do_drouge();
       if (data[1] <= MAIN_TRIGGER) {
         StateSet1 = DEPLOY_MAIN_REC; 
       }
@@ -444,11 +475,12 @@ void loop() {
     case VALID_FLIGHT_IGN:
       printout = printout + ", VALID_FLIGHT_IGN";
       //if any tilt exists initiate lockout to avoid Missiling
+      unsigned long currentTime = millis();
       if (abs(data[4]) >= LOCKOUT_DEGREE_SQUARED) {//
         StateSet2 = LOCKOUT_IGN;
       }
-      // detect time to ignite based on slowing down
-      else if (data[0] < -IGNITION_SLOW_THRESH) {
+      // detect time to ignite based on expected burn time
+      else if (currentTime - startTime > BOOSTER_BURN) {
         StateSet2 = IGNITE_IGN;
       }
       break;

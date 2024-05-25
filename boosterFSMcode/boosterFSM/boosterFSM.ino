@@ -17,11 +17,17 @@ enum Recovery_State
   DEPLOY_MAIN_REC = 'M'
 };
 
-//%%%%%%%%%%%%%%%%%%%%%%%% ACCELEROMETER SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
+//%%%%%%%%%%%%%%%%%%%%%%%% FLIGHT OPS PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%//
 
-// const int LAsampleSize = 10;
-// int LARawMin = 0;
-// int LARawMax = 1023;
+//TBD
+#define FSM_SPEED 250 //manual delay per FSM iteration [helps for testing 0 for launch]
+#define LAUNCH_FLOOR 100
+#define DECELERATION_DELAY 1000 //delay from when we detect motor burnout before sep
+#define BOOSTER_BURN 1000 //milliseconds of expected burn
+#define MAIN_DIST_FROM_APPOGEE 10 //-change in alt from apogee before drouge
+#define MAIN_PIN 5 //relay pins to be set
+#define SEP_PIN 7 
+
 
 //%%%%%%%%%%%%%%%%%%%%%%%% IMU SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 #define BNO055_SAMPLERATE_DELAY_MS (100)
@@ -50,12 +56,13 @@ int chipSelect = 4;
 //%%%%%%%%%%%%%%%%%%%%%%%% FSM SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 // Define the initial state for each set
 Recovery_State StateSet1 = IDLE_REC;
-int calibrate_length = 5; //sets how many iterations of average sensor readings we take on launch pad
-
+int calibrate_length = 500; //sets how many iterations of average sensor readings we take on launch pad
+bool seperated = false;
 
 //memory
 int max_height = 0;
 int base_height = 0;
+unsigned long startTime;
 // TODO::ENSURE THAT ACCELERATION IS change in height over time NOT absolute accel to prevent issues with sideways travel
 // ENSURE THIS IS ALTITUDE ABOVE GROUND NOT FROM SEA
 float HEIGHT_FLOOR = 20; //0.00776714; // TEMP height floor in 8-miles
@@ -69,9 +76,6 @@ float acc_trend[] = {0,0,0,0,0,0,0,0,0,0};
 //%%%%%%%%%%%%%%%%%%%%%%%% PIN SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
 //pin settings
 int buzzerPin = 9;
-// const int xInput = A0;
-// const int yInput = A1;
-// const int zInput = A2;
 
 //sensor settings
 const int Mode = 1; //1:sensor 2: test from laptop
@@ -81,19 +85,6 @@ void read_telemetry_test(String result[2]) {
   result[0] = Serial.readStringUntil('\n');
   result[1] = Serial.readStringUntil('\n');
 }
-
-// // Take samples and return the average
-// int ReadAxis(int axisPin)
-// {
-// 	long reading = 0;
-// 	analogRead(axisPin);
-// 	delay(1);
-// 	for (int i = 0; i < LAsampleSize; i++)
-// 	{
-// 	reading += analogRead(axisPin);
-// 	}
-// 	return reading/LAsampleSize;
-// }
 
 float calculateAngleDifference(float final_angle, float initial_angle) {
   // Calculate the smallest difference between two angles considering wrap-around
@@ -106,28 +97,31 @@ float calculateAngleDifference(float final_angle, float initial_angle) {
   return difference;
 }
 
+float calculateInclination(double pitchDegrees, double yawDegrees) {
+    // Convert degrees to radians
+    double pitch = pitchDegrees * DEG_TO_RAD;
+    double yaw = yawDegrees * DEG_TO_RAD;
+
+    // Calculate direction vector components
+    double v_x = cos(pitch) * cos(yaw);
+    double v_y = cos(pitch) * sin(yaw);
+    double v_z = sin(pitch);
+
+    // Calculate the magnitude of the vector
+    double v_magnitude = sqrt(v_x * v_x + v_y * v_y + v_z * v_z);
+
+    // Calculate the inclination angle
+    double alpha = acos(sqrt(v_y*v_y + v_z*v_z) / v_magnitude);
+
+    // Convert radians to degrees for the final result
+    float alphaDegrees = abs(90 - alpha * RAD_TO_DEG);
+
+    return alphaDegrees;
+}
+
 void read_telemetry(float result[3]) {
   //Lin-Accel
   data[0] = 0;
-  // {
-  //   //Read raw values
-  //   int xRaw = ReadAxis(xInput);
-  //   int yRaw = ReadAxis(yInput);
-  //   int zRaw = ReadAxis(zInput);
-
-  //   // Convert raw values to 'milli-Gs"
-  //   long xScaled = map(xRaw, LARawMin, LARawMax, -3000, 3000);
-  //   long yScaled = map(yRaw, LARawMin, LARawMax, -3000, 3000);
-  //   long zScaled = map(zRaw, LARawMin, LARawMax, -3000, 3000);
-
-  //   // re-scale to fractional Gs
-  //   float xAccel = xScaled / 1000.0;
-  //   float yAccel = yScaled / 1000.0;
-  //   float zAccel = zScaled / 1000.0;
-  //   data[0] = zAccel;
-  //   Serial.print("zAccel: ");
-  //   Serial.println(data[0]);
-  // }
   //altitude
   {
     data[1] = baro.getHeightCentiMeters()/30.48 - alt0;
@@ -152,14 +146,33 @@ void read_telemetry(float result[3]) {
     Serial.println(ang[2]);
     Serial.print("ang2: ");
     Serial.println(ang[3]);
-    data[4] = (ang[2]*ang[2])+(ang[3]*ang[3]);
+    // data[4] = (ang[2]*ang[2])+(ang[3]*ang[3]);
+    data[4] = calculateInclination(ang[2],ang[3]);
     Serial.print("bad_tilt: ");
     Serial.println(data[4]);
   }
 }
 
+void do_sep(){
+  delay(DECELERATION_DELAY);
+  digitalWrite(SEP_PIN, HIGH);
+  seperated = true;
+  Serial.println(" SEPARATION !!!!!!!!!!!!!!!!!!!!!!!!!");
+}
+
+void do_main(){
+  if (!seperated){
+    digitalWrite(SEP_PIN, HIGH);
+    delay(500);
+  }
+  digitalWrite(MAIN_PIN, HIGH);
+}
+
 int calibrate(){
   int song[7] = {440,494,523,587,659,698,784};
+  {//Setup Burnout Code
+    startTime = millis();
+  }
   {//Setup Gyro True North
     for (int i = 0; i<calibrate_length;i++){
       ///Gyro Calibration Summation
@@ -193,7 +206,7 @@ int calibrate(){
     alt0 = 0;
     altitude = 0;
     avg_alt = 0;
-    int num_points = 50;
+    int num_points = 150;
     for (int i=0; i<num_points; i++)
       {
         alt0 += baro.getHeightCentiMeters()/30.48;
@@ -238,6 +251,7 @@ float mean(float arr[]){
 // Setup for state machine
 void setup()
 {
+  // delay(1500);
   //Buzzer Code
   pinMode(buzzerPin, OUTPUT);
   tone(buzzerPin, 587); // Turn the buzzer on
@@ -254,13 +268,10 @@ void setup()
   delay(500); 
   noTone(buzzerPin);  
 
-  //LA setup
-  // analogReference(EXTERNAL);
-  //TODO Fix Analoge Reference
 
   //IMU
   bno.begin();
-  bno.setExtCrystalUse(true);
+  bno.setExtCrystalUse(false);
   uint8_t system, gyro, accel, mag;
   system = gyro = accel = mag = 0;
   bno.getCalibration(&system, &gyro, &accel, &mag);
@@ -296,20 +307,17 @@ void setup()
   }
   
   //fail case
-  // if (calibrate() == 0){
-  //   while(1) {
-  //     //failed setup
-  //   }
-  // }
-  return;
-  calibrate();
-  
+  if (calibrate() == 0){
+    while(1) {
+      //failed setup
+    }
+  }
 }
 
 
 void loop()
 {
-  // delay(10); // Add a delay of 1 second (adjust as needed)
+  delay(FSM_SPEED); // Add a delay of 1 second (adjust as needed)
   // variable assignment: {acceleration, altitude, altitude_mean, accel_mean, abs_gyro_tilt}
   if (data[1] > max_height){
     max_height = data[1];
@@ -331,6 +339,8 @@ void loop()
   data[2] = mean(alt_trend); //alt average
   data[3] = mean(acc_trend); //acc average
   // TODO::test
+
+  
 
   // Update state machine
   switch (StateSet1)
@@ -376,12 +386,16 @@ void loop()
       //NEEDS TRIGGER WAIT      
       StateSet1 = DEPLOY_MAIN_REC;
     }
+    unsigned long currentTime = millis();
+    if (currentTime - startTime > BOOSTER_BURN) {
+      do_sep();
+    }
     break;
 
   // State to trigger main deploy at floor
   case DEPLOY_MAIN_REC:
     Serial.println("DEPLOY_MAIN_REC");
-    // deploy_main();
+    do_main();
     // END STATE
     break;
   }
