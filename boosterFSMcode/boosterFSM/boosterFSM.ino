@@ -63,6 +63,7 @@ bool seperated = false;
 int max_height = 0;
 int base_height = 0;
 unsigned long startTime;
+bool booster_on = false;
 // TODO::ENSURE THAT ACCELERATION IS change in height over time NOT absolute accel to prevent issues with sideways travel
 // ENSURE THIS IS ALTITUDE ABOVE GROUND NOT FROM SEA
 float HEIGHT_FLOOR = 20; //0.00776714; // TEMP height floor in 8-miles
@@ -166,6 +167,18 @@ void do_main(){
     delay(500);
   }
   digitalWrite(MAIN_PIN, HIGH);
+}
+
+void start_flight(){
+  //Setup Burnout Code
+  startTime = millis();
+  booster_on = true;
+}
+
+void end_flight(){
+  //Setup Burnout Code
+  startTime = millis();
+  booster_on = false;
 }
 
 int calibrate(){
@@ -349,9 +362,10 @@ void loop()
     Serial.println("IDLE_REC");
     // Placeholder condition for detecting launch
     // index[0] = acceleration index
-    if (data[0] >= 0)
+    if (data[0] >= 0 && data[1] > 5)
     { // movement of rocket is the current assumption for launch
       StateSet1 = DETECT_LAUNCH_IGN;
+      start_flight();
     }
     break;
 
@@ -372,6 +386,7 @@ void loop()
     {
       // if altitude is not changing
       StateSet1 = IDLE_REC;
+      end_flight();
     }
     break;
 
@@ -387,7 +402,7 @@ void loop()
       StateSet1 = DEPLOY_MAIN_REC;
     }
     unsigned long currentTime = millis();
-    if (currentTime - startTime > BOOSTER_BURN) {
+    if (booster_on && currentTime - startTime > BOOSTER_BURN) {
       do_sep();
     }
     break;

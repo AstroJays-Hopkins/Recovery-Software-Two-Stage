@@ -29,6 +29,7 @@ enum Ignition_State { IDLE_IGN, DETECT_LAUNCH_IGN, VALID_FLIGHT_IGN, LOCKOUT_IGN
 #define MAIN_PIN 11 //relay pins to be set
 #define DROUGE_PIN 10
 #define SUSTAINER_PIN 12 
+#define CAMERA_PIN 14 //NO CLUE WHAT THE CORRECT PIN IS NEED TO SEE IN PERSON
 
 
 //%%%%%%%%%%%%%%%%%%%%%%%% ACCELEROMETER SETUP %%%%%%%%%%%%%%%%%%%%%%%%//
@@ -74,6 +75,7 @@ int calibrate_length = 100; //sets how many iterations of average sensor reading
 int max_height = 0;
 int base_height = 0;
 unsigned long startTime;
+bool booster_on = false;
 // TODO::ENSURE THAT ACCELERATION IS change in height over time NOT absolute accel to prevent issues with sideways travel
 // ENSURE THIS IS ALTITUDE ABOVE GROUND NOT FROM SEA
 float HEIGHT_FLOOR = LAUNCH_FLOOR; //0.00776714; // TEMP height floor in 8-miles
@@ -317,6 +319,21 @@ void do_drouge(){
   digitalWrite(DROUGE_PIN, HIGH);
 }
 
+void start_flight(){
+  digitalWrite(CAMERA_PIN, HIGH);
+  //Setup Burnout Code
+  startTime = millis();
+  booster_on = true;  
+}
+
+void end_flight(){
+  digitalWrite(CAMERA_PIN, LOW);
+  //Setup Burnout Code
+  startTime = millis();
+  booster_on = false;
+}
+
+
 // Setup for state machine
 void setup()
 {
@@ -330,6 +347,7 @@ void setup()
   pinMode(MAIN_PIN, OUTPUT);
   pinMode(DROUGE_PIN, OUTPUT);
   pinMode(SUSTAINER_PIN, OUTPUT);
+  pinMode(CAMERA_PIN, OUTPUT);
 
   //IMU
   bno.begin();
@@ -402,8 +420,9 @@ void loop() {
     case IDLE_REC: 
       printout = "IDLE_REC";
       //check for change in acceleration and set state to detecting launch
-      if (data[0] >= 0) {
+      if (data[0] >= 0 && data[1] > 5) {
         StateSet1 = DETECT_LAUNCH_REC;
+        start_flight(); //start counting booster burn as soon as we detect acceleration. 
       }
       break;
     
@@ -420,6 +439,7 @@ void loop() {
       //2 = altitude_trend
       if (data[2] < 0) {
         StateSet1 = IDLE_REC;
+        end_flight();
       }
       break;
 
@@ -479,8 +499,8 @@ void loop() {
       if (abs(data[4]) >= LOCKOUT_DEGREE_SQUARED) {//
         StateSet2 = LOCKOUT_IGN;
       }
-      // detect time to ignite based on expected burn time
-      else if (currentTime - startTime > BOOSTER_BURN) {
+      // detect time to ignite based on expected burn time if launch has started
+      else if  (booster_on && currentTime - startTime > BOOSTER_BURN) {
         StateSet2 = IGNITE_IGN;
       }
       break;
