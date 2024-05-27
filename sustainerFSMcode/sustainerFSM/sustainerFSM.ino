@@ -475,7 +475,7 @@ void loop() {
     case IDLE_IGN:
       printout = printout + ", IDLE_IGN";
       //Placeholder condition for detecting launch
-      if (data[0] >= 0){ //movement of rocket is the current assumption for launch
+      if (data[0] >= 0 && data[1] > 5){ //movement of rocket is the current assumption for launch
         StateSet2 = DETECT_LAUNCH_IGN;
       }
       break;
