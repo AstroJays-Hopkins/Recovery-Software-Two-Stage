@@ -1,0 +1,2 @@
+# windows line endings are the worst. Encourage git to normalize them to unix style ones
+* text=auto

@@ -1,0 +1,43 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+BreakBeforeBraces: Attach
+ColumnLimit: 90
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+IndentCaseLabels: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+#PackConstructorInitializers: CurrentLine
+PointerAlignment: Left
+AccessModifierOffset: -4
+IncludeBlocks: Regroup
+IncludeCategories:
+  # c standard library headers
+  - Regex: >-
+      <(assert|complex|ctype|errno|fenv
+      |float|inttypes|iso646|limits|locale|math
+      |setjmp|signal|stdalign|stdarg|stdatomic|stdbit
+      |stdbool|stdckdint|stddef|stdint|stdio|stdlib|stdnoreturn
+      |string|tgmath|threads|time|uchar|wchar|wctype)\.h>
+    Priority:        1
+    SortPriority:    0
+    CaseSensitive:   false
+  # system headers, no extension
+  - Regex:           '<([A-Za-z0-9\Q/-_\E])+>'
+    Priority:        2
+    SortPriority:    0
+    CaseSensitive:   false
+  # system headers, with extension
+  - Regex:           '<([A-Za-z0-9.\Q/-_\E])+>'
+    Priority:        3
+    SortPriority:    0
+    CaseSensitive:   false
+  # everything else
+  - Regex:           '.*'
+    Priority:        4
+    SortPriority:    0
+    CaseSensitive:   false
+...
