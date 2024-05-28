@@ -401,6 +401,10 @@ void setup() {
     if constexpr (__debug_enabled || Mode == 2)
         Serial.begin(115200);
 
+    // init globals
+    statusFlags.reg = 0;
+    memset(&currentData, 0, sizeof(TelemetryEvent));
+
     // Relay Setup
     //  WRITE HIGH STATES before setting pinmodes for safety to prevent race. If we write
     //  after PINMODE, then there is a brief window when the pin is low, which is very
