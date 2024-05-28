@@ -576,8 +576,6 @@ void loop() {
                 ignitionState = IgnitionState::IGNITE_IGN;
             }
             break;
-            ignitionState = IgnitionState::LOCKOUT_IGN;
-            break;
         }
         case IgnitionState::LOCKOUT_IGN: {
             DEBUG_PRINT("igniter state: LOCKOUT_IGN");
