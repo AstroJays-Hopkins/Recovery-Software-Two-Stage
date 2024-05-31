@@ -40,11 +40,12 @@ union StatusFlags {
 //%%%%%%%%%%%%%%%%%%%%%%%% FLIGHT OPS PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%//
 
 #define FSM_SPEED 0                     // delay per FSM iteration [helps for testing 0 for launch] (ms).
-#define ARM_ALT 20.0                     // Altitude to arm system into ascent detection mode (ft).
-#define LAUNCH_FLOOR 100.0               // Altitude to use to arm into from ascent detect to ascent mode (ft).
+#define ARM_ALT 5.0                     // Altitude to arm system into ascent detection mode (ft).
+#define LAUNCH_FLOOR 10.0               // Altitude to use to arm into from ascent detect to ascent mode (ft).
 #define DECELERATION_DELAY 500          // delay from when we detect motor burnout before sep (ms).
-#define BOOSTER_BURN 1700               // duration of expected burn (ms).
+#define BOOSTER_BURN 1000               // duration of expected burn (ms).
 #define DESC_DROP_THRESH 20.0           // -change in alt from apogee before entering descent phase (ft).
+#define MAIN_DEPLOYMENT_ALTITUDE 50.0   // Height above ground to trigger parachute deployment (ft).
 #define ALT_CAL_SAMPLES 20              // number of readings to take while claibrating 0-point.
 #define AVG_CNT 4                       // number of sensor samples to average to smooth noise. MUST BE <= 10.
 
@@ -420,13 +421,16 @@ void loop() {
             }
             unsigned long currentTime = millis();
             if (booster_on && currentTime - startTime > BOOSTER_BURN) {
-              do_sep();
+                do_sep();
             }
             break;
         }
 
         case RecoveryState::DESCENT_REC: {
-            do_main();
+            if (currentData.altAvgFt <= MAIN_DEPLOYMENT_ALTITUDE) {
+                DEBUG_PRINT("DEPLOYING PARACHUTE");
+                do_main();
+            }
         }
     }
 
