@@ -4,6 +4,30 @@
 #include <SPI.h>
 #include <Wire.h>
 
+
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+//DO NOT FLY
+
+
+
 // uncomment to enable debug printing, must define BEFORE debug.h
 // #define DEBUG
 #include "debug.h"
