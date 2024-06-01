@@ -48,6 +48,8 @@ union StatusFlags {
 #define MAIN_DEPLOYMENT_ALTITUDE 50.0   // Height above ground to trigger parachute deployment (ft).
 #define ALT_CAL_SAMPLES 20              // number of readings to take while claibrating 0-point.
 #define AVG_CNT 4                       // number of sensor samples to average to smooth noise. MUST BE <= 10.
+#define MAIN_NEED_SEP_DELAY 500         // Delay in ms between emergency separation and booster main chute 
+#define MAIN_FROM_APOGEE_DELAY 0        // Delay in ms before main chute deploys (assumed zero unless FlOps)
 
 // PINS
 #define MAIN_PIN 5
@@ -202,8 +204,9 @@ void do_main() {
     DEBUG_PRINT("deploying main chute");
     if (!statusFlags.bit.separated) {
         digitalWrite(SEP_PIN, LOW);
-        delay(500);
+        delay(MAIN_NEED_SEP_DELAY);
     }
+    delay(MAIN_FROM_APOGEE_DELAY);
     statusFlags.bit.main_deployed = 1;
     digitalWrite(MAIN_PIN, LOW);
 }
