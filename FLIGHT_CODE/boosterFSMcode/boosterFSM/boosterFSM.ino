@@ -430,6 +430,7 @@ void loop() {
         }
 
         case RecoveryState::DESCENT_REC: {
+            DEBUG_PRINT("Main Deployed");
             do_main();
         }
     }
