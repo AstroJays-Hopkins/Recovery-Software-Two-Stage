@@ -49,11 +49,6 @@ union StatusFlags {
 
 //%%%%%%%%%%%%%%%%%%%%%%%% FLIGHT OPS PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%//
 
-// TODO:
-//  1) start timer at alt = 5
-//  2) implement camera code - sus only
-
-// TBD
 #define FSM_SPEED 0     // delay per FSM iteration [helps for testing 0 for launch] (ms).
 #define ARM_ALT 20       // altitude to arm statemachines at (ft).
 #define LAUNCH_FLOOR 100 // altitude to transition into ascent mode (ft).
@@ -62,7 +57,7 @@ union StatusFlags {
 #define DECELERATION_DELAY 500    // delay from motor burnout to separation (ms).
 #define IGNITION_DELAY 500        // delay from separation to ignition (ms).
 #define APPOGEE_DROP_THRESHOLD 20 // -change in alt from apogee before drouge
-#define LOCKOUT_DEGREE 40         // degrees of bad tilt squared before lockout
+#define LOCKOUT_DEGREE 30         // degrees of bad tilt squared before lockout
 #define ALT_CAL_SAMPLES 20        // samples to take to calibrate 0-point.
 #define AVG_CNT 4 // number of sensor samples to average to smooth noise. MUST BE <= 10.
 
