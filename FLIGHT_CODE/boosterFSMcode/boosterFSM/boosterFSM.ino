@@ -427,10 +427,7 @@ void loop() {
         }
 
         case RecoveryState::DESCENT_REC: {
-            if (currentData.altAvgFt <= MAIN_DEPLOYMENT_ALTITUDE) {
-                DEBUG_PRINT("DEPLOYING PARACHUTE");
-                do_main();
-            }
+            do_main();
         }
     }
 
